@@ -1,6 +1,6 @@
 public with sharing class AvailableProductsRepository {
   @AuraEnabled(cacheable=true)
-  public static List<ProductWrapper> getAvailableProducts(Id orderId, String searchKeyword, String sortField) {
+  public static List<ProductWrapper> getAvailableProducts(Id orderId, String searchKeyword) {
     List<ProductWrapper> products = new List<ProductWrapper>();
 
     Order order = [SELECT Pricebook2Id FROM Order WHERE Id = :orderId];

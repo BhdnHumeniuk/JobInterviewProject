@@ -1,0 +1,20 @@
+<template>
+  <lightning-card title="Available Products">
+      <div class="slds-m-around_medium">
+          <lightning-input
+              label="Search"
+              type="search"
+              value={searchKeyword}
+              onchange={handleSearch}
+          ></lightning-input>
+      </div>
+      <div class="slds-m-around_medium">
+          <lightning-datatable
+              key-field="id"
+              data={products}
+              columns={columns}
+              onrowaction={handleRowAction}
+          ></lightning-datatable>
+      </div>
+  </lightning-card>
+</template>

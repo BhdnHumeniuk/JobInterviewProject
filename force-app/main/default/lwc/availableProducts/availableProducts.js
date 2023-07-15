@@ -11,22 +11,23 @@ const columns = [
 ];
 
 export default class AvailableProducts extends LightningElement {
-    @api recordId;
-
+    
     searchKeyword = '';
     products = [];
     columns = columns;
-    wiredProductsResult;
     sortDirection = 'asc';
     sortedBy;
 
-    @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword', sortField: 'Name' })
-    wiredProducts(result) {
-        this.wiredProductsResult = result;
-        if (result.data) {
-            this.products = result.data.map(product => {
+    @api recordId;
+
+    @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
+    wiredProducts({ data, error }) {
+        if (data) {
+            this.products = data.map(product => {
                 return { ...product, productName: product.pricebookEntry.Product2.Name, listPrice: product.pricebookEntry.UnitPrice };
             });
+        } else if (error) {
+            console.error('Error fetching available products:', error);
         }
     }
 
@@ -41,7 +42,7 @@ export default class AvailableProducts extends LightningElement {
         if (action.name === 'add') {
             addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
                 .then(() => {
-                    return refreshApex(this.wiredProductsResult);
+                    return refreshApex(this.wiredProducts);
                 })
                 .then(() => {
                     showSuccessMessage('Success', 'Product added to order successfully');
@@ -51,5 +52,28 @@ export default class AvailableProducts extends LightningElement {
                     showErrorMessage('Error', 'Failed to add product to order');
                 });
         }
+    }
+
+    handleSort(event) {
+        const { fieldName: sortField, sortDirection } = event.detail;
+        this.sortedBy = sortField;
+        this.sortDirection = sortDirection === 'asc' ? 'asc' : 'desc';
+        this.sortData(sortField, this.sortDirection);
+    }
+
+    sortData(sortField, sortDirection) {
+        const data = JSON.parse(JSON.stringify(this.products));
+        data.sort((a, b) => {
+            let sortValue = 0;
+            const valueA = a[sortField] || '';
+            const valueB = b[sortField] || '';
+            if (sortDirection === 'asc') {
+                sortValue = valueA > valueB ? 1 : -1;
+            } else if (sortDirection === 'desc') {
+                sortValue = valueA < valueB ? 1 : -1;
+            }
+            return sortValue;
+        });
+        this.products = data;
     }
 }

@@ -1,0 +1,19 @@
+<template>
+    <lightning-card title="Order Products">
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="id"
+                data={orderProducts}
+                columns={columns}
+                onrowaction={handleRowAction}
+                hide-checkbox-column={isOrderActivated}
+                onsort={handleSort}
+                sorted-direction={sortDirection}
+                sorted-by={sortedBy}
+            ></lightning-datatable>
+        </div>
+        <div class="slds-m-around_medium" if:false={isOrderActivated}>
+            <lightning-button label="Activate Order" onclick={handleActivateOrder} variant="brand"></lightning-button>
+        </div>
+    </lightning-card>
+</template>

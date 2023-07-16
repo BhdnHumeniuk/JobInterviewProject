@@ -17,6 +17,7 @@ export default class AvailableProducts extends LightningElement {
     columns = columns;
     sortDirection = 'asc';
     sortedBy;
+    isLoading = false;
 
     @api recordId;
 
@@ -36,6 +37,7 @@ export default class AvailableProducts extends LightningElement {
     }
 
     handleRowAction(event) {
+        this.isLoading = true;
         const action = event.detail.action;
         const row = event.detail.row;
 
@@ -50,7 +52,8 @@ export default class AvailableProducts extends LightningElement {
                 .catch(error => {
                     console.error('Error adding product to order:', error);
                     showErrorMessage('Error', 'Failed to add product to order');
-                });
+                })
+                .finally(() => (this.isLoading = false));
         }
     }
 

@@ -16,4 +16,5 @@
             <lightning-button label="Activate Order" onclick={handleActivateOrder} variant="brand"></lightning-button>
         </div>
     </lightning-card>
+    <lightning-spinner if:true={isLoading} alternative-text='loading' size="large"></lightning-spinner>
 </template>

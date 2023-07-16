@@ -1,9 +1,9 @@
-import { LightningElement, wire, api, track } from 'lwc';
+import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
 import getOrderProducts from '@salesforce/apex/OrderProductsRepository.getOrderProducts';
 import activateOrder from '@salesforce/apex/OrderProductsRepository.activateOrder';
 import deleteProductFromOrder from '@salesforce/apex/OrderProductsRepository.deleteProductFromOrder';
-
+import getOrderStatus from '@salesforce/apex/OrderProductsRepository.getOrderStatus';
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 
 const columns = [
@@ -15,30 +15,68 @@ const columns = [
 ];
 
 export default class OrderProducts extends LightningElement {
-    
     orderProducts = [];
     columns = columns;
-    isOrderActivated = false;
-    sortDirection = 'asc';
-    sortedBy;
-    wiredOrderProductsResult;
-    activatedOrder;
+    isOrderActive = false;
     isLoading = false;
 
     @api recordId;
+    wiredOrderProductsResult;
+
+    connectedCallback() {
+        this.fetchOrderProducts();
+        this.fetchOrderStatus();
+    }
+
+    fetchOrderProducts() {
+        getOrderProducts({ orderId: this.recordId })
+            .then((data) => {
+                this.orderProducts = data.map((product) => {
+                    return {
+                        ...product,
+                        productName: product.Product2.Name,
+                        unitPrice: product.UnitPrice,
+                        quantityValue: product.Quantity,
+                        totalPrice: product.UnitPrice * product.Quantity,
+                        disableRemove: this.isOrderActive
+                    };
+                });
+            })
+            .catch((error) => {
+                console.error('Error fetching order products:', error);
+            });
+    }
+
+    fetchOrderStatus() {
+        getOrderStatus({ orderId: this.recordId })
+            .then((orderStatus) => {
+                this.isOrderActive = orderStatus === 'Activated';
+                this.updateButtonDisableStatus();
+            })
+            .catch((error) => {
+                console.error('Error fetching order status:', error);
+            });
+    }
+
+    updateButtonDisableStatus() {
+        this.orderProducts = this.orderProducts.map((product) => {
+            return { ...product, disableRemove: this.isOrderActive };
+        });
+        this.isActivateButtonDisabled = this.isOrderActive;
+    }
 
     @wire(getOrderProducts, { orderId: '$recordId' })
     wiredOrderProducts(result) {
         this.wiredOrderProductsResult = result;
         if (result.data) {
-            this.orderProducts = result.data.map(product => {
+            this.orderProducts = result.data.map((product) => {
                 return {
                     ...product,
                     productName: product.Product2.Name,
                     unitPrice: product.UnitPrice,
                     quantityValue: product.Quantity,
                     totalPrice: product.UnitPrice * product.Quantity,
-                    disableRemove: this.isOrderActivated
+                    disableRemove: this.isOrderActive
                 };
             });
         } else if (result.error) {
@@ -56,10 +94,11 @@ export default class OrderProducts extends LightningElement {
     }
 
     removeProductFromOrder(orderItemId) {
-        if (this.isOrderActivated) {
+        if (this.isOrderActive) {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
+
         this.isLoading = true;
         deleteProductFromOrder({ orderItemId })
             .then(() => {
@@ -67,8 +106,9 @@ export default class OrderProducts extends LightningElement {
             })
             .then(() => {
                 showSuccessMessage('Success', 'Product removed from order successfully');
+                this.fetchOrderProducts(); // Обновление списка товаров
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error('Error removing product from order:', error);
                 showErrorMessage('Error', 'Failed to remove product from order');
             })
@@ -76,28 +116,23 @@ export default class OrderProducts extends LightningElement {
     }
 
     handleActivateOrder() {
+        if (this.isOrderActive) {
+            showErrorMessage('Error', 'Order is already activated.');
+            return;
+        }
+
         this.isLoading = true;
         activateOrder({ orderId: this.recordId })
             .then(() => {
-                return getOrderProducts({ orderId: this.recordId });
+                this.isOrderActive = true;
+                this.updateButtonDisableStatus();
+                showSuccessMessage('Success', 'Order activated successfully');
             })
-            .then((data) => {
-                this.isOrderActivated = true;
-                this.activatedOrder = data[0]; // Assuming the response contains only one order record
-                this.updateRemoveButtons();
-                showSuccessMessage('Success', 'Order and products activated successfully');
-            })
-            .catch(error => {
+            .catch((error) => {
                 console.error('Error activating order:', error);
                 showErrorMessage('Error', 'Failed to activate order');
             })
             .finally(() => (this.isLoading = false));
-    }
-
-    updateRemoveButtons() {
-        this.orderProducts = this.orderProducts.map(product => {
-            return { ...product, disableRemove: true };
-        });
     }
 
     handleSort(event) {

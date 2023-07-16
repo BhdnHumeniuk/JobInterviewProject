@@ -2,6 +2,8 @@ import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
 import getAvailableProducts from '@salesforce/apex/AvailableProductsRepository.getAvailableProducts';
 import addProductToOrder from '@salesforce/apex/AvailableProductsRepository.addProductToOrder';
+import getOrderStatus from '@salesforce/apex/OrderProductsRepository.getOrderStatus';
+
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 
 const columns = [
@@ -18,15 +20,43 @@ export default class AvailableProducts extends LightningElement {
     sortDirection = 'asc';
     sortedBy;
     isLoading = false;
-
+    isOrderActive;
+    
     @api recordId;
 
-    @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
-    wiredProducts({ data, error }) {
-        if (data) {
-            this.products = data.map(product => {
-                return { ...product, productName: product.pricebookEntry.Product2.Name, listPrice: product.pricebookEntry.UnitPrice };
+    connectedCallback() {
+        this.fetchOrderStatus();
+    }
+
+    fetchOrderStatus() {
+        getOrderStatus({ orderId: this.recordId })
+            .then((orderStatus) => {
+                this.isOrderActive = orderStatus === 'Activated';
+                this.updateButtonDisableStatus();
+            })
+            .catch((error) => {
+                console.error('Error fetching order status:', error);
             });
+    }
+
+    updateButtonDisableStatus() {
+        this.products = this.products.map((product) => ({
+            ...product,
+            isAdded: this.isOrderActive || product.isAdded // Deactivate "Add" button if order is active or product is already added to the order
+        }));
+    }
+
+    @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
+    wiredProducts(result) {
+        this.wiredProductsResult = result;
+        const { data, error } = result;
+        if (data) {
+            this.products = data.map(product => ({
+                ...product,
+                productName: product.pricebookEntry.Product2.Name,
+                listPrice: product.pricebookEntry.UnitPrice,
+                isAdded: this.isOrderActive || product.isAdded // Deactivate "Add" button if order is active or product is already added to the order
+            }));
         } else if (error) {
             console.error('Error fetching available products:', error);
         }
@@ -43,13 +73,9 @@ export default class AvailableProducts extends LightningElement {
 
         if (action.name === 'add') {
             addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
-                .then(() => {
-                    return refreshApex(this.wiredProducts);
-                })
-                .then(() => {
-                    showSuccessMessage('Success', 'Product added to order successfully');
-                })
-                .catch(error => {
+                .then(() => refreshApex(this.wiredProductsResult))
+                .then(() => showSuccessMessage('Success', 'Product added to order successfully'))
+                .catch((error) => {
                     console.error('Error adding product to order:', error);
                     showErrorMessage('Error', 'Failed to add product to order');
                 })
@@ -65,18 +91,21 @@ export default class AvailableProducts extends LightningElement {
     }
 
     sortData(sortField, sortDirection) {
-        const data = JSON.parse(JSON.stringify(this.products));
+        const data = [...this.products];
         data.sort((a, b) => {
-            let sortValue = 0;
             const valueA = a[sortField] || '';
             const valueB = b[sortField] || '';
+            let sortValue = 0;
+
             if (sortDirection === 'asc') {
                 sortValue = valueA > valueB ? 1 : -1;
             } else if (sortDirection === 'desc') {
                 sortValue = valueA < valueB ? 1 : -1;
             }
+
             return sortValue;
         });
+
         this.products = data;
     }
 }

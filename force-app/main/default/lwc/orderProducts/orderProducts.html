@@ -13,7 +13,8 @@
             ></lightning-datatable>
         </div>
         <div class="slds-m-around_medium" if:false={isOrderActivated}>
-            <lightning-button label="Activate Order" onclick={handleActivateOrder} variant="brand"></lightning-button>
+            <lightning-button label="Activate Order" onclick={handleActivateOrder} variant="brand" disabled={isActivateButtonDisabled}></lightning-button>
         </div>
+        <lightning-spinner if:true={isLoading} alternative-text='loading' size="large"></lightning-spinner>
     </lightning-card>
 </template>

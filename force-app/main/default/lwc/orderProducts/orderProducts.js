@@ -23,6 +23,7 @@ export default class OrderProducts extends LightningElement {
     sortedBy;
     wiredOrderProductsResult;
     activatedOrder;
+    isLoading = false;
 
     @api recordId;
 
@@ -59,7 +60,7 @@ export default class OrderProducts extends LightningElement {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
-    
+        this.isLoading = true;
         deleteProductFromOrder({ orderItemId })
             .then(() => {
                 return refreshApex(this.wiredOrderProductsResult);
@@ -70,10 +71,12 @@ export default class OrderProducts extends LightningElement {
             .catch(error => {
                 console.error('Error removing product from order:', error);
                 showErrorMessage('Error', 'Failed to remove product from order');
-            });
+            })
+            .finally(() => (this.isLoading = false));
     }
 
     handleActivateOrder() {
+        this.isLoading = true;
         activateOrder({ orderId: this.recordId })
             .then(() => {
                 return getOrderProducts({ orderId: this.recordId });
@@ -87,7 +90,8 @@ export default class OrderProducts extends LightningElement {
             .catch(error => {
                 console.error('Error activating order:', error);
                 showErrorMessage('Error', 'Failed to activate order');
-            });
+            })
+            .finally(() => (this.isLoading = false));
     }
 
     updateRemoveButtons() {

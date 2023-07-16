@@ -5,17 +5,26 @@ public with sharing class OrderProductsRepository {
   }
 
   @AuraEnabled
-  public static void deleteProductFromOrder(Id orderId, Id orderItemId) {
-    OrderItem orderItem = new OrderItem(Id = orderItemId);
-    delete orderItem;
+  public static void deleteProductFromOrder(Id orderItemId) {
+    OrderItem orderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :orderItemId LIMIT 1];
+    if (orderItem != null) {
+      if (orderItem.Quantity > 1) {
+        orderItem.Quantity--;
+        update orderItem;
+      } else {
+        delete orderItem;
+      }
+    }
   }
 
   @AuraEnabled
   public static void activateOrder(Id orderId) {
-    Order order = new Order(Id = orderId);
-    List<OrderItem> orderItems = [SELECT Id FROM OrderItem WHERE OrderId = :orderId];
+    Order orderToUpdate = new Order(Id = orderId, Status = 'Activated');
+    update orderToUpdate;
+  }
 
-    update order;
-    update orderItems;
+  @AuraEnabled(cacheable=true)
+  public static Order getUpdatedOrder(Id orderId) {
+    return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
   }
 }

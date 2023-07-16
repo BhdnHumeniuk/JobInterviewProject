@@ -27,4 +27,10 @@ public with sharing class OrderProductsRepository {
   public static Order getUpdatedOrder(Id orderId) {
     return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
   }
+
+  @AuraEnabled
+  public static String getOrderStatus(Id orderId) {
+    Order order = [SELECT Status FROM Order WHERE Id = :orderId LIMIT 1];
+    return order.Status;
+  }
 }

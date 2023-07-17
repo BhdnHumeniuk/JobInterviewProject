@@ -1,15 +1,8 @@
-public with sharing class AvailableProductsRepository {
+public with sharing class ProductController {
   @AuraEnabled(cacheable=true)
-  public static List<ProductWrapper> getAvailableProducts(Id orderId, String searchKeyword) {
-    List<ProductWrapper> products = new List<ProductWrapper>();
-
-    Order order = [SELECT Pricebook2Id FROM Order WHERE Id = :orderId];
-
-    List<PricebookEntry> pricebookEntries = [
-      SELECT Id, Product2.Name, UnitPrice
-      FROM PricebookEntry
-      WHERE Pricebook2Id = :order.Pricebook2Id AND IsActive = TRUE AND Product2.Name LIKE :('%' + searchKeyword + '%')
-    ];
+  public static List<AvailableProductWrapper> getAvailableProducts(Id orderId, String searchKeyword) {
+    List<AvailableProductWrapper> products = new List<AvailableProductWrapper>();
+    List<PricebookEntry> pricebookEntries = ProductRepository.getAvailablePricebookEntries(orderId, searchKeyword);
 
     if (orderId != null) {
       List<OrderItem> orderItems = [SELECT Product2Id FROM OrderItem WHERE OrderId = :orderId];
@@ -17,7 +10,7 @@ public with sharing class AvailableProductsRepository {
       for (OrderItem item : orderItems) {
         for (PricebookEntry entry : pricebookEntries) {
           if (entry.Product2Id == item.Product2Id) {
-            products.add(new ProductWrapper(entry, true));
+            products.add(new AvailableProductWrapper(entry, true));
             break;
           }
         }
@@ -26,7 +19,7 @@ public with sharing class AvailableProductsRepository {
 
     for (PricebookEntry entry : pricebookEntries) {
       if (!isProductAlreadyAdded(products, entry.Product2Id)) {
-        products.add(new ProductWrapper(entry, false));
+        products.add(new AvailableProductWrapper(entry, false));
       }
     }
 
@@ -36,13 +29,7 @@ public with sharing class AvailableProductsRepository {
   @AuraEnabled
   public static void addProductToOrder(Id orderId, Id pricebookEntryId) {
     PricebookEntry entry = [SELECT Id, UnitPrice FROM PricebookEntry WHERE Id = :pricebookEntryId];
-
-    OrderItem orderItem;
-    try {
-      orderItem = [SELECT Id, Quantity, UnitPrice FROM OrderItem WHERE OrderId = :orderId AND PricebookEntryId = :pricebookEntryId LIMIT 1];
-    } catch (QueryException e) {
-      orderItem = null;
-    }
+    OrderItem orderItem = ProductRepository.getOrderItem(orderId, pricebookEntryId);
 
     if (orderItem != null) {
       orderItem.Quantity += 1;
@@ -50,11 +37,11 @@ public with sharing class AvailableProductsRepository {
       orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
     }
 
-    upsert orderItem;
+    ProductRepository.upsertOrderItem(orderItem);
   }
 
-  private static Boolean isProductAlreadyAdded(List<ProductWrapper> products, Id productId) {
-    for (ProductWrapper product : products) {
+  private static Boolean isProductAlreadyAdded(List<AvailableProductWrapper> products, Id productId) {
+    for (AvailableProductWrapper product : products) {
       if (product.pricebookEntry.Product2Id == productId) {
         return true;
       }
@@ -62,14 +49,14 @@ public with sharing class AvailableProductsRepository {
     return false;
   }
 
-  public class ProductWrapper {
+  public class AvailableProductWrapper {
     @AuraEnabled
     public PricebookEntry pricebookEntry { get; set; }
 
     @AuraEnabled
     public Boolean isAddedToOrder { get; set; }
 
-    public ProductWrapper(PricebookEntry entry, Boolean isAdded) {
+    public AvailableProductWrapper(PricebookEntry entry, Boolean isAdded) {
       pricebookEntry = entry;
       isAddedToOrder = isAdded;
     }

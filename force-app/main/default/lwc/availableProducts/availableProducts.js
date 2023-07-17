@@ -1,8 +1,8 @@
 import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
-import getAvailableProducts from '@salesforce/apex/AvailableProductsRepository.getAvailableProducts';
-import addProductToOrder from '@salesforce/apex/AvailableProductsRepository.addProductToOrder';
-import getOrderStatus from '@salesforce/apex/OrderProductsRepository.getOrderStatus';
+import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
+import addProductToOrder from '@salesforce/apex/ProductController.addProductToOrder';
+import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 

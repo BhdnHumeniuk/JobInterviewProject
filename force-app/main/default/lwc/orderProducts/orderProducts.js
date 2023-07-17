@@ -23,9 +23,14 @@ export default class OrderProducts extends LightningElement {
     @api recordId;
     wiredOrderProductsResult;
 
+    currentPage = 1;
+    itemsPerPage = 5;
+    visibleProducts = [];
+
     connectedCallback() {
         this.fetchOrderProducts();
         this.fetchOrderStatus();
+        this.updatePagination();
     }
 
     fetchOrderProducts() {
@@ -41,6 +46,7 @@ export default class OrderProducts extends LightningElement {
                         disableRemove: this.isOrderActive
                     };
                 });
+                this.updatePagination();
             })
             .catch((error) => {
                 console.error('Error fetching order products:', error);
@@ -79,6 +85,7 @@ export default class OrderProducts extends LightningElement {
                     disableRemove: this.isOrderActive
                 };
             });
+            this.updatePagination();
         } else if (result.error) {
             console.error('Error fetching order products:', result.error);
         }
@@ -156,5 +163,22 @@ export default class OrderProducts extends LightningElement {
             return sortValue;
         });
         this.orderProducts = data;
+        this.updatePagination();
+    }
+
+    handleItemsPerPageChange(event) {
+        this.itemsPerPage = event.target.value;
+        this.currentPage = 1;
+        this.updatePagination();
+    }
+
+    updatePagination() {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = this.itemsPerPage * this.currentPage;
+        this.visibleProducts = this.orderProducts.slice(start, end);
+    }
+
+    handleUpdatePagination(event) {
+        this.visibleProducts = event.detail.records;
     }
 }

@@ -24,13 +24,13 @@ export default class AvailableProducts extends LightningElement {
     
     currentPage = 1;
     itemsPerPage = 5;
-    visibleProducts = []; // Declaration of visibleProducts array
+    visibleProducts = [];
 
     @api recordId;
 
     connectedCallback() {
         this.fetchOrderStatus();
-        this.updatePagination(); // Initialize the visibleProducts array
+        this.updatePagination();
     }
 
     fetchOrderStatus() {

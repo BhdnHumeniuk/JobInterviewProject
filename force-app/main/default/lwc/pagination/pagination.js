@@ -6,6 +6,12 @@ export default class Pagination extends LightningElement {
     @api recordSize = 5;
     totalPage = 0;
     visibleRecords = [];
+    recordSizeOptions = [
+        { label: '5', value: '5' },
+        { label: '10', value: '10' },
+        { label: '20', value: '20' },
+        { label: '50', value: '50' }
+    ];
 
     get records() {
         return this.visibleRecords;
@@ -54,5 +60,12 @@ export default class Pagination extends LightningElement {
                 }
             })
         );
+    }
+
+    handleItemsPerPageChange(event) {
+        this.recordSize = event.detail.value;
+        this.totalPage = Math.ceil(this.totalRecords.length / this.recordSize);
+        this.currentPage = 1;
+        this.updateRecords();
     }
 }

@@ -22,10 +22,15 @@ export default class AvailableProducts extends LightningElement {
     isLoading = false;
     isOrderActive;
     
+    currentPage = 1;
+    itemsPerPage = 5;
+    visibleProducts = [];
+
     @api recordId;
 
     connectedCallback() {
         this.fetchOrderStatus();
+        this.updatePagination();
     }
 
     fetchOrderStatus() {
@@ -107,5 +112,21 @@ export default class AvailableProducts extends LightningElement {
         });
 
         this.products = data;
+    }
+
+    handleItemsPerPageChange(event) {
+        this.itemsPerPage = event.target.value;
+        this.currentPage = 1;
+        this.updatePagination();
+    }
+
+    updatePagination() {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = this.itemsPerPage * this.currentPage;
+        this.visibleProducts = this.products.slice(start, end);
+    }
+
+    handleUpdatePagination(event) {
+        this.visibleProducts = event.detail.records;
     }
 }

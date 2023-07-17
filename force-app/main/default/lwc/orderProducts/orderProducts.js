@@ -106,7 +106,7 @@ export default class OrderProducts extends LightningElement {
             })
             .then(() => {
                 showSuccessMessage('Success', 'Product removed from order successfully');
-                this.fetchOrderProducts(); // Обновление списка товаров
+                this.fetchOrderProducts();
             })
             .catch((error) => {
                 console.error('Error removing product from order:', error);

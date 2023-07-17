@@ -42,7 +42,7 @@ export default class AvailableProducts extends LightningElement {
     updateButtonDisableStatus() {
         this.products = this.products.map((product) => ({
             ...product,
-            isAdded: this.isOrderActive || product.isAdded // Deactivate "Add" button if order is active or product is already added to the order
+            isAdded: this.isOrderActive
         }));
     }
 
@@ -55,7 +55,7 @@ export default class AvailableProducts extends LightningElement {
                 ...product,
                 productName: product.pricebookEntry.Product2.Name,
                 listPrice: product.pricebookEntry.UnitPrice,
-                isAdded: this.isOrderActive || product.isAdded // Deactivate "Add" button if order is active or product is already added to the order
+                isAdded: this.isOrderActive
             }));
         } else if (error) {
             console.error('Error fetching available products:', error);

@@ -35,6 +35,7 @@ public with sharing class OrderProductsRepository {
     sendOrderInformation(orderId);
   }
 
+  @future(callout=true)
   private static void sendOrderInformation(Id orderId) {
     Order order = [SELECT Id, AccountId, OrderNumber, Status FROM Order WHERE Id = :orderId LIMIT 1];
     List<OrderItem> orderItems = getOrderProducts(orderId);
@@ -58,7 +59,7 @@ public with sharing class OrderProductsRepository {
 
     String requestBody = JSON.serialize(requestBodyMap);
 
-    String endpointUrl = 'https://myproject.requestcatcher.com/test';
+    String endpointUrl = 'https://myproject.requestcatcher.com';
     HttpResponse response = CalloutService.makePostCallout(endpointUrl, requestBody);
 
     if (response.getStatusCode() == 200) {

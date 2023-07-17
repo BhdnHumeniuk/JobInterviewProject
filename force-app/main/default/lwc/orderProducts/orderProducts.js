@@ -1,9 +1,9 @@
 import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
-import getOrderProducts from '@salesforce/apex/OrderProductsRepository.getOrderProducts';
-import activateOrder from '@salesforce/apex/OrderProductsRepository.activateOrder';
-import deleteProductFromOrder from '@salesforce/apex/OrderProductsRepository.deleteProductFromOrder';
-import getOrderStatus from '@salesforce/apex/OrderProductsRepository.getOrderStatus';
+import getOrderProducts from '@salesforce/apex/OrderController.getOrderProducts';
+import activateOrder from '@salesforce/apex/OrderController.activateOrder';
+import deleteProductFromOrder from '@salesforce/apex/OrderController.deleteProductFromOrder';
+import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 
 const columns = [

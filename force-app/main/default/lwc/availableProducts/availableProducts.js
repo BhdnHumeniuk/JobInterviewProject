@@ -3,7 +3,7 @@ import { refreshApex } from '@salesforce/apex';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
 import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
-import addProductToOrder from '@salesforce/apex/ProductController.addProductToOrder';
+import addProductsToOrders from '@salesforce/apex/ProductController.addProductsToOrders';
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
@@ -57,7 +57,7 @@ export default class AvailableProducts extends LightningElement {
         }));
     }
 
-    @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
+    @wire(getAvailableProducts, { orderIdsToSearchKeywords: '$orderIdsToSearchKeywords' })
     wiredProducts(result) {
         this.wiredProductsResult = result;
         const { data, error } = result;
@@ -68,22 +68,31 @@ export default class AvailableProducts extends LightningElement {
                 listPrice: product.pricebookEntry.UnitPrice,
                 isAdded: this.isOrderActive
             }));
+            this.updatePagination();
         } else if (error) {
             console.error('Error fetching available products:', error);
         }
     }
 
+    get orderIdsToSearchKeywords() {
+        const orderIdsToSearchKeywords = {};
+        orderIdsToSearchKeywords[this.recordId] = this.searchKeyword;
+        return orderIdsToSearchKeywords;
+    }
+
     handleSearch(event) {
         this.searchKeyword = event.target.value;
+        this.updatePagination();
     }
 
     handleRowAction(event) {
         this.isLoading = true;
         const action = event.detail.action;
         const row = event.detail.row;
-
+    
         if (action.name === 'add') {
-            addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
+            const orderIdsToPricebookEntryIds = { [this.recordId]: row.pricebookEntry.Id };
+            addProductsToOrders({ orderIdsToPricebookEntryIds })
                 .then(() => {
                     showSuccessMessage('Success', 'Product added to order successfully');
                     const message = {
@@ -105,6 +114,7 @@ export default class AvailableProducts extends LightningElement {
         this.sortedBy = sortField;
         this.sortDirection = sortDirection === 'asc' ? 'asc' : 'desc';
         this.sortData(sortField, this.sortDirection);
+        this.updatePagination();
     }
 
     sortData(sortField, sortDirection) {

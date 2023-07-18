@@ -1,53 +1,102 @@
 public with sharing class ProductController {
   @AuraEnabled(cacheable=true)
-  public static List<AvailableProductWrapper> getAvailableProducts(Id orderId, String searchKeyword) {
+  public static List<AvailableProductWrapper> getAvailableProducts(Map<Id, String> orderIdsToSearchKeywords) {
     List<AvailableProductWrapper> products = new List<AvailableProductWrapper>();
-    Map<Id, String> orderIdsToSearchKeywords = new Map<Id, String>();
-    orderIdsToSearchKeywords.put(orderId, searchKeyword);
 
     Map<Id, List<PricebookEntry>> orderIdsToPricebookEntries = ProductRepository.getAvailablePricebookEntries(orderIdsToSearchKeywords);
-    List<OrderItem> orderItems = new List<OrderItem>();
 
-    if (orderId != null) {
-      orderItems = [SELECT Product2Id FROM OrderItem WHERE OrderId = :orderId];
+    Set<Id> allOrderIds = orderIdsToSearchKeywords.keySet();
+    List<OrderItem> orderItems = [
+      SELECT Product2Id, OrderId
+      FROM OrderItem
+      WHERE OrderId IN :allOrderIds
+    ];
+
+    Map<Id, List<OrderItem>> orderIdsToOrderItems = new Map<Id, List<OrderItem>>();
+    for (OrderItem orderItem : orderItems) {
+      Id orderId = orderItem.OrderId;
+      if (!orderIdsToOrderItems.containsKey(orderId)) {
+        orderIdsToOrderItems.put(orderId, new List<OrderItem>());
+      }
+      orderIdsToOrderItems.get(orderId).add(orderItem);
     }
 
-    for (PricebookEntry entry : orderIdsToPricebookEntries.get(orderId)) {
-      Boolean isAddedToOrder = isProductAlreadyAdded(orderItems, entry.Product2Id);
-      products.add(new AvailableProductWrapper(entry, isAddedToOrder));
+    for (Id orderId : orderIdsToPricebookEntries.keySet()) {
+      List<PricebookEntry> pricebookEntries = orderIdsToPricebookEntries.get(orderId);
+      List<OrderItem> items = orderIdsToOrderItems.containsKey(orderId) ? orderIdsToOrderItems.get(orderId) : new List<OrderItem>();
+
+      for (PricebookEntry entry : pricebookEntries) {
+        Boolean isAddedToOrder = isProductAlreadyAdded(items, entry.Product2Id);
+        products.add(new AvailableProductWrapper(entry, isAddedToOrder));
+      }
     }
 
     return products;
   }
 
   @AuraEnabled
-  public static void addProductToOrder(Id orderId, Id pricebookEntryId) {
-    PricebookEntry entry = [SELECT Id, UnitPrice FROM PricebookEntry WHERE Id = :pricebookEntryId];
-    Map<Id, Id> orderIdsToPricebookEntryIds = new Map<Id, Id>();
-    orderIdsToPricebookEntryIds.put(orderId, pricebookEntryId);
+  public static void addProductsToOrders(Map<Id, Id> orderIdsToPricebookEntryIds) {
+    Set<Id> pricebookEntryIds = new Set<Id>(orderIdsToPricebookEntryIds.values());
 
-    Map<Id, OrderItem> orderItemsMap = ProductRepository.getOrderItems(orderIdsToPricebookEntryIds);
-    OrderItem orderItem = orderItemsMap.get(orderId);
+    Map<Id, PricebookEntry> pricebookEntriesMap = new Map<Id, PricebookEntry>(
+      [
+        SELECT Id, UnitPrice
+        FROM PricebookEntry
+        WHERE Id IN :pricebookEntryIds
+      ]
+    );
 
-    if (orderItem != null) {
-      orderItem.Quantity += 1;
-    } else {
-      orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
+    Set<Id> allOrderIds = new Set<Id>(orderIdsToPricebookEntryIds.keySet());
+    List<OrderItem> allOrderItems = [
+      SELECT Id, Quantity, OrderId, PricebookEntryId
+      FROM OrderItem
+      WHERE OrderId IN :allOrderIds AND PricebookEntryId IN :pricebookEntryIds
+    ];
+
+    Map<Id, List<OrderItem>> orderIdsToOrderItems = new Map<Id, List<OrderItem>>();
+    for (OrderItem orderItem : allOrderItems) {
+      Id orderId = orderItem.OrderId;
+      if (!orderIdsToOrderItems.containsKey(orderId)) {
+        orderIdsToOrderItems.put(orderId, new List<OrderItem>());
+      }
+      orderIdsToOrderItems.get(orderId).add(orderItem);
     }
 
-    List<OrderItem> orderItems = new List<OrderItem>();
-    orderItems.add(orderItem);
+    List<OrderItem> orderItemsToUpsert = new List<OrderItem>();
+    for (Id orderId : orderIdsToPricebookEntryIds.keySet()) {
+      Id pricebookEntryId = orderIdsToPricebookEntryIds.get(orderId);
+      PricebookEntry entry = pricebookEntriesMap.get(pricebookEntryId);
 
-    ProductRepository.upsertOrderItems(orderItems);
+      List<OrderItem> items = orderIdsToOrderItems.containsKey(orderId) ? orderIdsToOrderItems.get(orderId) : new List<OrderItem>();
+
+      OrderItem orderItem;
+      for (OrderItem item : items) {
+        if (item.PricebookEntryId == pricebookEntryId) {
+          orderItem = item;
+          break;
+        }
+      }
+
+      if (orderItem != null) {
+        orderItem.Quantity += 1;
+      } else {
+        orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
+      }
+
+      orderItemsToUpsert.add(orderItem);
+    }
+
+    ProductRepository.upsertOrderItems(orderItemsToUpsert);
   }
 
   private static Boolean isProductAlreadyAdded(List<OrderItem> orderItems, Id productId) {
+    Map<Id, OrderItem> productIdToOrderItemMap = new Map<Id, OrderItem>();
+
     for (OrderItem orderItem : orderItems) {
-      if (orderItem.Product2Id == productId) {
-        return true;
-      }
+      productIdToOrderItemMap.put(orderItem.Product2Id, orderItem);
     }
-    return false;
+
+    return productIdToOrderItemMap.containsKey(productId);
   }
 
   public class AvailableProductWrapper {

@@ -1,5 +1,7 @@
 import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
+import { subscribe, publish, MessageContext } from 'lightning/messageService';
+import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getOrderProducts from '@salesforce/apex/OrderController.getOrderProducts';
 import activateOrder from '@salesforce/apex/OrderController.activateOrder';
 import deleteProductFromOrder from '@salesforce/apex/OrderController.deleteProductFromOrder';
@@ -18,19 +20,23 @@ export default class OrderProducts extends LightningElement {
     orderProducts = [];
     columns = columns;
     isOrderActive = false;
-    isLoading = false;
-
-    @api recordId;
-    wiredOrderProductsResult;
 
     currentPage = 1;
     itemsPerPage = 5;
     visibleProducts = [];
 
+    isLoading = false;
+
+    @api recordId;
+
+    @wire(MessageContext)
+    messageContext;
+    
     connectedCallback() {
         this.fetchOrderProducts();
         this.fetchOrderStatus();
         this.updatePagination();
+        this.subscribeToMessageChannel();
     }
 
     fetchOrderProducts() {
@@ -134,6 +140,8 @@ export default class OrderProducts extends LightningElement {
                 this.isOrderActive = true;
                 this.updateButtonDisableStatus();
                 showSuccessMessage('Success', 'Order activated successfully');
+                const message = { orderId: this.recordId };
+                publish(this.messageContext, ORDER_ACTIVATED_CHANNEL, message);
             })
             .catch((error) => {
                 console.error('Error activating order:', error);
@@ -180,5 +188,31 @@ export default class OrderProducts extends LightningElement {
 
     handleUpdatePagination(event) {
         this.visibleProducts = event.detail.records;
+    }
+
+    increaseQuantity(productId) {
+        const updatedProducts = this.orderProducts.map((product) => {
+            if (product.Product2.Id === productId) {
+                return {
+                    ...product,
+                    Quantity: product.Quantity + 1,
+                    totalPrice: (product.Quantity + 1) * product.unitPrice
+                };
+            }
+            return product;
+        });
+        this.orderProducts = updatedProducts;
+    }
+
+    subscribeToMessageChannel() {
+        this.subscription = subscribe(
+            this.messageContext,
+            ORDER_ACTIVATED_CHANNEL,
+            (message) => {
+                const productId = message.recordId;
+                this.increaseQuantity(productId);
+                refreshApex(this.wiredOrderProductsResult); 
+            }
+        );
     }
 }

@@ -1,5 +1,7 @@
 import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
+import { publish, subscribe, MessageContext } from 'lightning/messageService';
+import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
 import addProductToOrder from '@salesforce/apex/ProductController.addProductToOrder';
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
@@ -13,23 +15,27 @@ const columns = [
 ];
 
 export default class AvailableProducts extends LightningElement {
-    
-    searchKeyword = '';
     products = [];
+    searchKeyword = '';
     columns = columns;
     sortDirection = 'asc';
     sortedBy;
-    isLoading = false;
     isOrderActive;
     
     currentPage = 1;
     itemsPerPage = 5;
     visibleProducts = [];
 
+    isLoading = false;
+    
     @api recordId;
+
+    @wire(MessageContext)
+    messageContext;
 
     connectedCallback() {
         this.fetchOrderStatus();
+        this.subscribeToOrderActivatedMessage();
         this.updatePagination();
     }
 
@@ -78,8 +84,14 @@ export default class AvailableProducts extends LightningElement {
 
         if (action.name === 'add') {
             addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
-                .then(() => refreshApex(this.wiredProductsResult))
-                .then(() => showSuccessMessage('Success', 'Product added to order successfully'))
+                .then(() => {
+                    showSuccessMessage('Success', 'Product added to order successfully');
+                    const message = {
+                        recordId: row.pricebookEntry.Id
+                    };
+                    publish(this.messageContext, ORDER_ACTIVATED_CHANNEL, message);
+                    console.log('Sent message from AvailableProducts component:', message);
+                })
                 .catch((error) => {
                     console.error('Error adding product to order:', error);
                     showErrorMessage('Error', 'Failed to add product to order');
@@ -128,5 +140,18 @@ export default class AvailableProducts extends LightningElement {
 
     handleUpdatePagination(event) {
         this.visibleProducts = event.detail.records;
+    }
+
+    subscribeToOrderActivatedMessage() {
+        this.subscription = subscribe(
+            this.messageContext,
+            ORDER_ACTIVATED_CHANNEL,
+            (message) => {
+                const { orderId } = message;
+                if (orderId === this.recordId) {
+                    this.fetchOrderStatus();
+                }
+            }
+        );
     }
 }

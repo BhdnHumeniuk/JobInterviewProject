@@ -2,25 +2,19 @@ public with sharing class ProductController {
   @AuraEnabled(cacheable=true)
   public static List<AvailableProductWrapper> getAvailableProducts(Id orderId, String searchKeyword) {
     List<AvailableProductWrapper> products = new List<AvailableProductWrapper>();
-    List<PricebookEntry> pricebookEntries = ProductRepository.getAvailablePricebookEntries(orderId, searchKeyword);
+    Map<Id, String> orderIdsToSearchKeywords = new Map<Id, String>();
+    orderIdsToSearchKeywords.put(orderId, searchKeyword);
+
+    Map<Id, List<PricebookEntry>> orderIdsToPricebookEntries = ProductRepository.getAvailablePricebookEntries(orderIdsToSearchKeywords);
+    List<OrderItem> orderItems = new List<OrderItem>();
 
     if (orderId != null) {
-      List<OrderItem> orderItems = [SELECT Product2Id FROM OrderItem WHERE OrderId = :orderId];
-
-      for (OrderItem item : orderItems) {
-        for (PricebookEntry entry : pricebookEntries) {
-          if (entry.Product2Id == item.Product2Id) {
-            products.add(new AvailableProductWrapper(entry, true));
-            break;
-          }
-        }
-      }
+      orderItems = [SELECT Product2Id FROM OrderItem WHERE OrderId = :orderId];
     }
 
-    for (PricebookEntry entry : pricebookEntries) {
-      if (!isProductAlreadyAdded(products, entry.Product2Id)) {
-        products.add(new AvailableProductWrapper(entry, false));
-      }
+    for (PricebookEntry entry : orderIdsToPricebookEntries.get(orderId)) {
+      Boolean isAddedToOrder = isProductAlreadyAdded(orderItems, entry.Product2Id);
+      products.add(new AvailableProductWrapper(entry, isAddedToOrder));
     }
 
     return products;
@@ -29,7 +23,11 @@ public with sharing class ProductController {
   @AuraEnabled
   public static void addProductToOrder(Id orderId, Id pricebookEntryId) {
     PricebookEntry entry = [SELECT Id, UnitPrice FROM PricebookEntry WHERE Id = :pricebookEntryId];
-    OrderItem orderItem = ProductRepository.getOrderItem(orderId, pricebookEntryId);
+    Map<Id, Id> orderIdsToPricebookEntryIds = new Map<Id, Id>();
+    orderIdsToPricebookEntryIds.put(orderId, pricebookEntryId);
+
+    Map<Id, OrderItem> orderItemsMap = ProductRepository.getOrderItems(orderIdsToPricebookEntryIds);
+    OrderItem orderItem = orderItemsMap.get(orderId);
 
     if (orderItem != null) {
       orderItem.Quantity += 1;
@@ -37,12 +35,15 @@ public with sharing class ProductController {
       orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
     }
 
-    ProductRepository.upsertOrderItem(orderItem);
+    List<OrderItem> orderItems = new List<OrderItem>();
+    orderItems.add(orderItem);
+
+    ProductRepository.upsertOrderItems(orderItems);
   }
 
-  private static Boolean isProductAlreadyAdded(List<AvailableProductWrapper> products, Id productId) {
-    for (AvailableProductWrapper product : products) {
-      if (product.pricebookEntry.Product2Id == productId) {
+  private static Boolean isProductAlreadyAdded(List<OrderItem> orderItems, Id productId) {
+    for (OrderItem orderItem : orderItems) {
+      if (orderItem.Product2Id == productId) {
         return true;
       }
     }

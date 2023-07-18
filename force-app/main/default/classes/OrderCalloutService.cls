@@ -23,7 +23,15 @@ public with sharing class OrderCalloutService {
 
     String requestBody = JSON.serialize(requestBodyMap);
 
-    String endpointUrl = 'https://myproject.requestcatcher.com';
+    Confirmation_order_setting__c customSetting = Confirmation_order_setting__c.getInstance();
+
+    String endpointUrl;
+    if (customSetting != null && !String.isBlank(customSetting.URL__c)) {
+      endpointUrl = customSetting.URL__c;
+    } else {
+      endpointUrl = 'https://default.requestcatcher.com';
+    }
+
     HttpResponse response = CalloutService.makePostCallout(endpointUrl, requestBody);
 
     if (response.getStatusCode() == 200) {

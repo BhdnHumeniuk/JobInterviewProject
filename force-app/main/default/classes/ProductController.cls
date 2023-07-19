@@ -2,17 +2,12 @@ public with sharing class ProductController {
   @AuraEnabled(cacheable=true)
   public static List<AvailableProductWrapper> getAvailableProducts(Map<Id, String> orderIdsToSearchKeywords) {
     List<AvailableProductWrapper> products = new List<AvailableProductWrapper>();
-
     Map<Id, List<PricebookEntry>> orderIdsToPricebookEntries = ProductRepository.getAvailablePricebookEntries(orderIdsToSearchKeywords);
-
     Set<Id> allOrderIds = orderIdsToSearchKeywords.keySet();
-    List<OrderItem> orderItems = [
-      SELECT Product2Id, OrderId
-      FROM OrderItem
-      WHERE OrderId IN :allOrderIds
-    ];
 
+    List<OrderItem> orderItems = OrderRepository.getOrderItems(allOrderIds);
     Map<Id, List<OrderItem>> orderIdsToOrderItems = new Map<Id, List<OrderItem>>();
+
     for (OrderItem orderItem : orderItems) {
       Id orderId = orderItem.OrderId;
       if (!orderIdsToOrderItems.containsKey(orderId)) {
@@ -37,23 +32,13 @@ public with sharing class ProductController {
   @AuraEnabled
   public static void addProductsToOrders(Map<Id, Id> orderIdsToPricebookEntryIds) {
     Set<Id> pricebookEntryIds = new Set<Id>(orderIdsToPricebookEntryIds.values());
-
-    Map<Id, PricebookEntry> pricebookEntriesMap = new Map<Id, PricebookEntry>(
-      [
-        SELECT Id, UnitPrice
-        FROM PricebookEntry
-        WHERE Id IN :pricebookEntryIds
-      ]
-    );
+    Map<Id, PricebookEntry> pricebookEntriesMap = ProductRepository.getPricebookEntriesMap(pricebookEntryIds);
 
     Set<Id> allOrderIds = new Set<Id>(orderIdsToPricebookEntryIds.keySet());
-    List<OrderItem> allOrderItems = [
-      SELECT Id, Quantity, OrderId, PricebookEntryId
-      FROM OrderItem
-      WHERE OrderId IN :allOrderIds AND PricebookEntryId IN :pricebookEntryIds
-    ];
+    List<OrderItem> allOrderItems = OrderRepository.getAllOrderItems(allOrderIds, pricebookEntryIds);
 
     Map<Id, List<OrderItem>> orderIdsToOrderItems = new Map<Id, List<OrderItem>>();
+
     for (OrderItem orderItem : allOrderItems) {
       Id orderId = orderItem.OrderId;
       if (!orderIdsToOrderItems.containsKey(orderId)) {
@@ -63,13 +48,13 @@ public with sharing class ProductController {
     }
 
     List<OrderItem> orderItemsToUpsert = new List<OrderItem>();
+
     for (Id orderId : orderIdsToPricebookEntryIds.keySet()) {
       Id pricebookEntryId = orderIdsToPricebookEntryIds.get(orderId);
       PricebookEntry entry = pricebookEntriesMap.get(pricebookEntryId);
-
       List<OrderItem> items = orderIdsToOrderItems.containsKey(orderId) ? orderIdsToOrderItems.get(orderId) : new List<OrderItem>();
-
       OrderItem orderItem;
+
       for (OrderItem item : items) {
         if (item.PricebookEntryId == pricebookEntryId) {
           orderItem = item;
@@ -82,11 +67,9 @@ public with sharing class ProductController {
       } else {
         orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
       }
-
       orderItemsToUpsert.add(orderItem);
     }
-
-    ProductRepository.upsertOrderItems(orderItemsToUpsert);
+    OrderRepository.upsertOrderItems(orderItemsToUpsert);
   }
 
   private static Boolean isProductAlreadyAdded(List<OrderItem> orderItems, Id productId) {

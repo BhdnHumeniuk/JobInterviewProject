@@ -17,8 +17,24 @@ public with sharing class OrderRepository {
     update orderToUpdate;
   }
 
+  public static List<OrderItem> getOrderItems(Set<Id> allOrderIds) {
+    return [SELECT Product2Id, OrderId FROM OrderItem WHERE OrderId IN :allOrderIds];
+  }
+
+  public static List<OrderItem> getAllOrderItems(Set<Id> allOrderIds, Set<Id> pricebookEntryIds) {
+    return [
+      SELECT Id, Quantity, OrderId, PricebookEntryId
+      FROM OrderItem
+      WHERE OrderId IN :allOrderIds AND PricebookEntryId IN :pricebookEntryIds
+    ];
+  }
+
   public static void upsertOrderItem(OrderItem orderItem) {
     upsert orderItem;
+  }
+
+  public static void upsertOrderItems(List<OrderItem> orderItems) {
+    upsert orderItems;
   }
 
   public static void deleteOrderItem(OrderItem orderItem) {

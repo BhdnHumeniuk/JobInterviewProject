@@ -42,7 +42,6 @@ export default class OrderProducts extends LightningElement {
     fetchOrderProducts() {
         getOrderProducts({ orderIds: this.recordId })
           .then((data) => {
-            console.log('Fetched order products:', data);
             const mergedOrderProducts = Object.values(data).flatMap(orderItems => orderItems);
             this.orderProducts = mergedOrderProducts.map((product) => {
                 return {
@@ -54,7 +53,6 @@ export default class OrderProducts extends LightningElement {
                     disableRemove: this.isOrderActive
                 };
             });
-            console.log('Updated order products:', this.orderProducts);
             this.updatePagination();
           })
           .catch((error) => {

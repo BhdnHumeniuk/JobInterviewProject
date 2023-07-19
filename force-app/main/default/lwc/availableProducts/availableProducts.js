@@ -58,25 +58,20 @@ export default class AvailableProducts extends LightningElement {
     }
 
 
-    @wire(getAvailableProducts, { orderIdsToSearchKeywords: '$orderIdsToSearchKeywords' })
+    @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
     wiredProducts(result) {
-      this.wiredProductsResult = result;
-      const { data, error } = result;
-      if (data) {
-        this.products = this.mapProductData(data);
-        this.updatePagination();
-      } else if (error) {
-        console.error('Error fetching available products:', error);
-      }
-    }
-  
-    mapProductData(data) {
-      return data.map((product) => ({
-        ...product,
-        productName: product.pricebookEntry.Product2.Name,
-        listPrice: product.pricebookEntry.UnitPrice,
-        isAdded: this.isOrderActive
-      }));
+        this.wiredProductsResult = result;
+        const { data, error } = result;
+        if (data) {
+            this.products = data.map(product => ({
+                ...product,
+                productName: product.pricebookEntry.Product2.Name,
+                listPrice: product.pricebookEntry.UnitPrice,
+                isAdded: this.isOrderActive
+            }));
+        } else if (error) {
+            console.error('Error fetching available products:', error);
+        }
     }
 
     get orderIdsToSearchKeywords() {

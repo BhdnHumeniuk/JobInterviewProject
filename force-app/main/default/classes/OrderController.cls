@@ -43,16 +43,4 @@ public with sharing class OrderController {
       OrderCalloutService.sendOrderInformation(orderId);
     }
   }
-
-  public class AvailableProductWrapper {
-    @AuraEnabled
-    public PricebookEntry pricebookEntry { get; set; }
-    @AuraEnabled
-    public Boolean isAddedToOrder { get; set; }
-
-    public AvailableProductWrapper(PricebookEntry entry, Boolean isAddedToOrder) {
-      this.pricebookEntry = entry;
-      this.isAddedToOrder = isAddedToOrder;
-    }
-  }
 }

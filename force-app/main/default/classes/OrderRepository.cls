@@ -23,6 +23,10 @@ public with sharing class OrderRepository {
     update ordersToUpdate;
   }
 
+  public static List<OrderItem> getOrderItems(Id allOrderId) {
+    return [SELECT Product2Id, OrderId FROM OrderItem WHERE OrderId = :allOrderId];
+  }
+
   public static List<OrderItem> getOrderItems(Set<Id> allOrderIds) {
     return [SELECT Product2Id, OrderId FROM OrderItem WHERE OrderId IN :allOrderIds];
   }

@@ -1,5 +1,4 @@
 import { LightningElement, wire, api } from 'lwc';
-import { refreshApex } from '@salesforce/apex';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
 import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
@@ -40,8 +39,9 @@ export default class AvailableProducts extends LightningElement {
     }
 
     fetchOrderStatus() {
-        getOrderStatus({ orderId: this.recordId })
-            .then((orderStatus) => {
+        getOrderStatus({ orderIds: this.recordId })
+            .then((orderStatusMap) => {
+                const orderStatus = orderStatusMap[this.recordId];
                 this.isOrderActive = orderStatus === 'Activated';
                 this.updateButtonDisableStatus();
             })

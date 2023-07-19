@@ -1,30 +1,45 @@
 public with sharing class OrderController {
   @AuraEnabled(cacheable=true)
   public static List<OrderItem> getOrderProducts(Id orderId) {
-    return OrderRepository.getOrderProducts(orderId);
+    return OrderRepository.getOrderItemsForOrder(orderId);
   }
 
   @AuraEnabled
-  public static void deleteProductFromOrder(Id orderItemId) {
-    OrderItem orderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :orderItemId LIMIT 1];
-    if (orderItem != null) {
+  public static void deleteProductFromOrder(List<Id> orderItemIds) {
+    List<OrderItem> orderItems = OrderRepository.getAllOrderItemsForOrdersById(new Set<Id>(orderItemIds));
+
+    List<OrderItem> itemsToUpdate = new List<OrderItem>();
+    List<OrderItem> itemsToDelete = new List<OrderItem>();
+
+    for (OrderItem orderItem : orderItems) {
       if (orderItem.Quantity > 1) {
         orderItem.Quantity--;
-        OrderRepository.upsertOrderItem(orderItem);
+        itemsToUpdate.add(orderItem);
       } else {
-        OrderRepository.deleteOrderItem(orderItem);
+        itemsToDelete.add(orderItem);
       }
+    }
+
+    if (!itemsToUpdate.isEmpty()) {
+      OrderRepository.upsertOrderItems(itemsToUpdate);
+    }
+
+    if (!itemsToDelete.isEmpty()) {
+      OrderRepository.deleteOrderItem(itemsToDelete);
     }
   }
 
   @AuraEnabled
-  public static String getOrderStatus(Id orderId) {
-    return OrderRepository.getOrderStatus(orderId);
+  public static Map<Id, String> getOrderStatus(List<Id> orderIds) {
+    Map<Id, String> orderStatusMap = OrderRepository.getOrderStatusMapByIds(new Set<Id>(orderIds));
+    return orderStatusMap;
   }
 
   @AuraEnabled
-  public static void activateOrder(Id orderId) {
-    OrderRepository.activateOrder(orderId);
-    OrderCalloutService.sendOrderInformation(orderId);
+  public static void activateOrder(List<Id> orderIds) {
+    OrderRepository.activateOrdersByIds(new Set<Id>(orderIds));
+    for (Id orderId : orderIds) {
+      OrderCalloutService.sendOrderInformation(orderId);
+    }
   }
 }

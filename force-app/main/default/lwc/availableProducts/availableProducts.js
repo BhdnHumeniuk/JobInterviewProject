@@ -1,9 +1,8 @@
 import { LightningElement, wire, api } from 'lwc';
-import { refreshApex } from '@salesforce/apex';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
 import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
-import addProductToOrder from '@salesforce/apex/ProductController.addProductToOrder';
+import addProductsToOrders from '@salesforce/apex/ProductController.addProductsToOrders';
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
@@ -40,8 +39,9 @@ export default class AvailableProducts extends LightningElement {
     }
 
     fetchOrderStatus() {
-        getOrderStatus({ orderId: this.recordId })
-            .then((orderStatus) => {
+        getOrderStatus({ orderIds: this.recordId })
+            .then((orderStatusMap) => {
+                const orderStatus = orderStatusMap[this.recordId];
                 this.isOrderActive = orderStatus === 'Activated';
                 this.updateButtonDisableStatus();
             })
@@ -56,6 +56,7 @@ export default class AvailableProducts extends LightningElement {
             isAdded: this.isOrderActive
         }));
     }
+
 
     @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
     wiredProducts(result) {
@@ -73,17 +74,25 @@ export default class AvailableProducts extends LightningElement {
         }
     }
 
+    get orderIdsToSearchKeywords() {
+        const orderIdsToSearchKeywords = {};
+        orderIdsToSearchKeywords[this.recordId] = this.searchKeyword;
+        return orderIdsToSearchKeywords;
+    }
+
     handleSearch(event) {
         this.searchKeyword = event.target.value;
+        this.updatePagination();
     }
 
     handleRowAction(event) {
         this.isLoading = true;
         const action = event.detail.action;
         const row = event.detail.row;
-
+    
         if (action.name === 'add') {
-            addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
+            const orderIdsToPricebookEntryIds = { [this.recordId]: row.pricebookEntry.Id };
+            addProductsToOrders({ orderIdsToPricebookEntryIds })
                 .then(() => {
                     showSuccessMessage('Success', 'Product added to order successfully');
                     const message = {
@@ -105,6 +114,7 @@ export default class AvailableProducts extends LightningElement {
         this.sortedBy = sortField;
         this.sortDirection = sortDirection === 'asc' ? 'asc' : 'desc';
         this.sortData(sortField, this.sortDirection);
+        this.updatePagination();
     }
 
     sortData(sortField, sortDirection) {

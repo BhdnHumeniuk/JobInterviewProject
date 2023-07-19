@@ -1,6 +1,6 @@
 public with sharing class ProductRepository {
   public static List<PricebookEntry> getAvailablePricebookEntries(Id orderId, String searchKeyword) {
-    Order order = [SELECT Pricebook2Id FROM Order WHERE Id = :orderId];
+    Order order = OrderRepository.getPricebookFromOrder(orderId);
 
     return [
       SELECT Id, Product2.Name, UnitPrice
@@ -9,15 +9,8 @@ public with sharing class ProductRepository {
     ];
   }
 
-  public static OrderItem getOrderItem(Id orderId, Id pricebookEntryId) {
-    try {
-      return [SELECT Id, Quantity, UnitPrice FROM OrderItem WHERE OrderId = :orderId AND PricebookEntryId = :pricebookEntryId LIMIT 1];
-    } catch (QueryException e) {
-      return null;
-    }
-  }
-
-  public static void upsertOrderItem(OrderItem orderItem) {
-    upsert orderItem;
+  public static Map<Id, PricebookEntry> getPricebookEntriesMapByIds(Set<Id> pricebookEntryIds) {
+    Map<Id, PricebookEntry> pricebookEntriesMap = new Map<Id, PricebookEntry>([SELECT Id, UnitPrice FROM PricebookEntry WHERE Id IN :pricebookEntryIds]);
+    return pricebookEntriesMap;
   }
 }

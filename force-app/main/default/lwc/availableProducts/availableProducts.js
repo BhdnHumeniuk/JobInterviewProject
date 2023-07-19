@@ -57,10 +57,8 @@ export default class AvailableProducts extends LightningElement {
         }));
     }
 
-
     @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
     wiredProducts(result) {
-        this.wiredProductsResult = result;
         const { data, error } = result;
         if (data) {
             this.products = data.map(product => ({
@@ -69,15 +67,14 @@ export default class AvailableProducts extends LightningElement {
                 listPrice: product.pricebookEntry.UnitPrice,
                 isAdded: this.isOrderActive
             }));
+            this.updatePagination();
         } else if (error) {
             console.error('Error fetching available products:', error);
         }
     }
 
     get orderIdsToSearchKeywords() {
-        const orderIdsToSearchKeywords = {};
-        orderIdsToSearchKeywords[this.recordId] = this.searchKeyword;
-        return orderIdsToSearchKeywords;
+        return { [this.recordId]: this.searchKeyword };
     }
 
     handleSearch(event) {
@@ -86,7 +83,6 @@ export default class AvailableProducts extends LightningElement {
     }
 
     handleRowAction(event) {
-        this.isLoading = true;
         const action = event.detail.action;
         const row = event.detail.row;
     
@@ -96,16 +92,15 @@ export default class AvailableProducts extends LightningElement {
                 .then(() => {
                     showSuccessMessage('Success', 'Product added to order successfully');
                     const message = {
+                        orderId: this.recordId,
                         recordId: row.pricebookEntry.Id
                     };
                     publish(this.messageContext, ORDER_ACTIVATED_CHANNEL, message);
-                    console.log('Sent message from AvailableProducts component:', message);
                 })
                 .catch((error) => {
                     console.error('Error adding product to order:', error);
                     showErrorMessage('Error', 'Failed to add product to order');
-                })
-                .finally(() => (this.isLoading = false));
+                });
         }
     }
 

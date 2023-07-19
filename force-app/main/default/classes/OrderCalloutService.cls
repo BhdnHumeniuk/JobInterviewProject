@@ -2,7 +2,7 @@ public with sharing class OrderCalloutService {
   @future(callout=true)
   public static void sendOrderInformation(Id orderId) {
     Order order = [SELECT Id, AccountId, OrderNumber, Type, Status FROM Order WHERE Id = :orderId LIMIT 1];
-    List<OrderItem> orderItems = OrderRepository.getOrderProduct(orderId);
+    List<OrderItem> orderItems = OrderRepository.getOrderItemsForOrder(orderId);
 
     Map<String, Object> requestBodyMap = new Map<String, Object>();
     requestBodyMap.put('accountNumber', order.AccountId);

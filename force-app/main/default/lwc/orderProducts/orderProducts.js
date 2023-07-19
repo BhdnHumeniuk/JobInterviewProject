@@ -114,12 +114,13 @@ export default class OrderProducts extends LightningElement {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
-
-        this.isLoading = true;
+    
+        this.decreaseQuantity(orderItemIds[0]);
+    
+        const originalProducts = JSON.parse(JSON.stringify(this.orderProducts));
+    
         deleteProductFromOrder({ orderItemIds })
             .then(() => {
-                console.log('Try refresing apex');
-                this.fetchOrderProducts();
                 return refreshApex(this.wiredOrderProductsResult);
             })
             .then(() => {
@@ -127,9 +128,9 @@ export default class OrderProducts extends LightningElement {
             })
             .catch((error) => {
                 console.error('Error removing product from order:', error);
+                this.orderProducts = originalProducts;
                 showErrorMessage('Error', 'Failed to remove product from order');
-            })
-            .finally(() => (this.isLoading = false));
+            });
     }
 
     handleActivateOrder() {
@@ -201,6 +202,21 @@ export default class OrderProducts extends LightningElement {
                     ...product,
                     Quantity: product.Quantity + 1,
                     totalPrice: (product.Quantity + 1) * product.unitPrice
+                };
+            }
+            return product;
+        });
+        this.orderProducts = updatedProducts;
+    }
+
+    decreaseQuantity(productId) {
+        const updatedProducts = this.orderProducts.map((product) => {
+            if (product.Product2.Id === productId) {
+                const newQuantity = product.Quantity - 1;
+                return {
+                    ...product,
+                    Quantity: newQuantity,
+                    totalPrice: newQuantity * product.unitPrice
                 };
             }
             return product;

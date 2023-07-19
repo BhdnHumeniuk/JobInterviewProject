@@ -1,20 +1,42 @@
 public with sharing class OrderRepository {
-  public static List<OrderItem> getOrderProducts(Id orderId) {
+  public static Map<Id, List<OrderItem>> getOrderProducts(Set<Id> orderIds) {
+    System.debug('####: ' + orderIds);
+    Map<Id, List<OrderItem>> orderIdToOrderItems = new Map<Id, List<OrderItem>>();
+    List<OrderItem> orderItems = [SELECT Id, Product2.Name, Quantity, UnitPrice, OrderId FROM OrderItem WHERE OrderId IN :orderIds];
+
+    for (OrderItem orderItem : orderItems) {
+      if (!orderIdToOrderItems.containsKey(orderItem.OrderId)) {
+        orderIdToOrderItems.put(orderItem.OrderId, new List<OrderItem>());
+      }
+      orderIdToOrderItems.get(orderItem.OrderId).add(orderItem);
+    }
+
+    System.debug('***********: ' + orderIdToOrderItems);
+    return orderIdToOrderItems;
+  }
+
+  public static List<OrderItem> getOrderProduct(Id orderId) {
     return [SELECT Id, Product2.Name, Quantity, UnitPrice FROM OrderItem WHERE OrderId = :orderId];
   }
 
-  public static Order getUpdatedOrder(Id orderId) {
-    return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
+  public static Order getUpdatedOrder(Set<Id> orderIds) {
+    return [SELECT Id, Status FROM Order WHERE Id IN :orderIds];
   }
 
-  public static String getOrderStatus(Id orderId) {
-    Order order = [SELECT Status FROM Order WHERE Id = :orderId LIMIT 1];
-    return order.Status;
+  public static Map<Id, String> getOrderStatus(Set<Id> orderIds) {
+    Map<Id, String> orderIdToStatus = new Map<Id, String>();
+    for (Order order : [SELECT Id, Status FROM Order WHERE Id IN :orderIds]) {
+      orderIdToStatus.put(order.Id, order.Status);
+    }
+    return orderIdToStatus;
   }
 
-  public static void activateOrder(Id orderId) {
-    Order orderToUpdate = new Order(Id = orderId, Status = 'Activated');
-    update orderToUpdate;
+  public static void activateOrders(Set<Id> orderIds) {
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Id orderId : orderIds) {
+      ordersToUpdate.add(new Order(Id = orderId, Status = 'Activated'));
+    }
+    update ordersToUpdate;
   }
 
   public static List<OrderItem> getOrderItems(Set<Id> allOrderIds) {
@@ -29,15 +51,11 @@ public with sharing class OrderRepository {
     ];
   }
 
-  public static void upsertOrderItem(OrderItem orderItem) {
-    upsert orderItem;
-  }
-
   public static void upsertOrderItems(List<OrderItem> orderItems) {
     upsert orderItems;
   }
 
-  public static void deleteOrderItem(OrderItem orderItem) {
+  public static void deleteOrderItem(List<OrderItem> orderItem) {
     delete orderItem;
   }
 }

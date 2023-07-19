@@ -40,9 +40,11 @@ export default class OrderProducts extends LightningElement {
     }
 
     fetchOrderProducts() {
-        getOrderProducts({ orderId: this.recordId })
+        getOrderProducts({ orderIds: this.recordId })
             .then((data) => {
-                this.orderProducts = data.map((product) => {
+                const mergedOrderProducts = Object.values(data).flatMap(orderItems => orderItems);
+    
+                this.orderProducts = mergedOrderProducts.map((product) => {
                     return {
                         ...product,
                         productName: product.Product2.Name,
@@ -60,7 +62,7 @@ export default class OrderProducts extends LightningElement {
     }
 
     fetchOrderStatus() {
-        getOrderStatus({ orderId: this.recordId })
+        getOrderStatus({ orderIds: this.recordId })
             .then((orderStatus) => {
                 this.isOrderActive = orderStatus === 'Activated';
                 this.updateButtonDisableStatus();
@@ -81,17 +83,21 @@ export default class OrderProducts extends LightningElement {
     wiredOrderProducts(result) {
         this.wiredOrderProductsResult = result;
         if (result.data) {
-            this.orderProducts = result.data.map((product) => {
-                return {
-                    ...product,
-                    productName: product.Product2.Name,
-                    unitPrice: product.UnitPrice,
-                    quantityValue: product.Quantity,
-                    totalPrice: product.UnitPrice * product.Quantity,
-                    disableRemove: this.isOrderActive
-                };
-            });
-            this.updatePagination();
+            if (Array.isArray(result.data)) {
+                this.orderProducts = result.data.map((product) => {
+                    return {
+                        ...product,
+                        productName: product.Product2.Name,
+                        unitPrice: product.UnitPrice,
+                        quantityValue: product.Quantity,
+                        totalPrice: product.UnitPrice * product.Quantity,
+                        disableRemove: this.isOrderActive
+                    };
+                });
+                this.updatePagination();
+            } else {
+                console.error('Data is not an array:', result.data);
+            }
         } else if (result.error) {
             console.error('Error fetching order products:', result.error);
         }
@@ -100,20 +106,22 @@ export default class OrderProducts extends LightningElement {
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
-
+    
         if (action.name === 'remove') {
-            this.removeProductFromOrder(row.Id);
+            const productId = row.Product2Id;
+            this.removeProductFromOrder(productId);
         }
     }
 
-    removeProductFromOrder(orderItemId) {
+    removeProductFromOrder(productId) {
         if (this.isOrderActive) {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
-
+    
         this.isLoading = true;
-        deleteProductFromOrder({ orderItemId })
+        const orderItemIdToRemove = this.orderProducts.find((product) => product.Product2.Id === productId).Id;
+        deleteProductFromOrder({ orderItemId: orderItemIdToRemove })
             .then(() => {
                 return refreshApex(this.wiredOrderProductsResult);
             })
@@ -135,7 +143,7 @@ export default class OrderProducts extends LightningElement {
         }
 
         this.isLoading = true;
-        activateOrder({ orderId: this.recordId })
+        activateOrder({ orderIds: this.recordId })
             .then(() => {
                 this.isOrderActive = true;
                 this.updateButtonDisableStatus();

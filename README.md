@@ -34,24 +34,20 @@ This Salesforce DX project aims to enhance the order management process for a cu
 - Errors and timeouts from the external system need to be handled properly, providing a robust solution.
 - The solution should be able to handle a large number of products, exceeding 200, without compromising user experience.
 
-Sending POST Requests to an External Website
-To facilitate sending POST requests to an external website, custom settings will be used. The following steps outline the process:
+### Sending POST Requests to an External Website
+To enable the communication of POST requests with an external website, the following steps will be taken:
 
-Step 1: Create Custom Settings
-Label: Confirmation Order Setting
-Object Name: Confirmation_order_setting
-Add a field named "URL" to the custom setting to store the full address of the website that will receive the requests. For this use case, the URL will be "https://myproject.requestcatcher.com".
-Step 2: Setup Remote Site Settings
-In order to allow communication with the external website, the following Remote Site Setting must be configured:
+Custom Settings Creation:
+- Label: Confirmation Order Setting
+- Object Name: Confirmation_order_setting
+- Field: URL (To store the full address of the external website that will receive the requests)
+- Value: The URL will be set to "https://myproject.requestcatcher.com", which is the address of the target website for this use case.
 
-Navigate to Setup in Salesforce.
-Search for Remote Site Settings in the Quick Find box and click on it.
-Click the New Remote Site button.
-Enter the Remote Site Name: My Project Request Catcher
-Enter the Remote Site URL: https://myproject.requestcatcher.com
-Optionally, provide a Description to help identify the purpose of this remote site.
-Save the settings.
-With these configurations in place, the Salesforce application will be able to send POST requests to the specified external website using the URL stored in the custom setting "Confirmation Order Setting." The external website, in this case, is "https://myproject.requestcatcher.com". Any responses from the website can be handled accordingly to ensure proper error handling and processing within the Salesforce application.
+Setup Remote Site Settings:
+- Remote Site Name: My Project Request Catcher
+- Remote Site URL: https://myproject.requestcatcher.com
+- Description: (Optional) A brief description to identify the purpose of this remote site.
+- With the custom settings and remote site settings properly configured, the Salesforce application will have the capability to send POST requests to the specified external website, which is "https://myproject.requestcatcher.com". Any responses received from the external website will be handled as per the defined requirements, ensuring effective error handling and seamless integration with the Salesforce application.
 
 ## Resources
 For development and deployment, the following resources will be utilized:

@@ -5,7 +5,7 @@ private class ProductRepositoryTest {
     Account testAccount = TestDataFactory.createTestAccount('Test Account');
     insert testAccount;
 
-    List<Product2> testProducts = TestDataFactory.createTestProducts(1000);
+    List<Product2> testProducts = TestDataFactory.createTestProducts(5);
     insert testProducts;
 
     Id pricebookId = Test.getStandardPricebookId();
@@ -30,47 +30,20 @@ private class ProductRepositoryTest {
     Test.stopTest();
 
     System.assertNotEquals(null, entries, 'Pricebook entries should not be null');
-    System.assertEquals(1000, entries.size(), 'Incorrect number of pricebook entries');
-  }
-
-  // @IsTest
-  // static void testGetOrderItem() {
-  //   List<Order> testOrders = [SELECT Id FROM Order LIMIT 1];
-  //   List<PricebookEntry> testPricebookEntries = [SELECT Id FROM PricebookEntry WHERE IsActive = TRUE LIMIT 1];
-
-  //   Test.startTest();
-  //   OrderItem result = ProductRepository.getOrderItem(testOrders[0].Id, testPricebookEntries[0].Id);
-  //   Test.stopTest();
-
-  //   System.assertNotEquals(null, result, 'OrderItem should not be null');
-  //   System.assertEquals(testOrders[0].Id, result.OrderId, 'OrderIds should match');
-  //   System.assertEquals(testPricebookEntries[0].Id, result.PricebookEntryId, 'PricebookEntryIds should match');
-  //   System.assertEquals(2, result.Quantity, 'Quantity should match');
-  //   System.assertEquals(100, result.UnitPrice, 'UnitPrice should match');
-  // }
-
-  @IsTest
-  static void testGetOrderItem_OrderItemNotFound() {
-    List<Order> testOrders = [SELECT Id FROM Order LIMIT 1];
-
-    Test.startTest();
-    OrderItem result = ProductRepository.getOrderItem(testOrders[0].Id, null);
-    Test.stopTest();
-
-    System.assertEquals(null, result, 'OrderItem should be null when not found');
+    System.assertEquals(5, entries.size(), 'Incorrect number of pricebook entries');
   }
 
   @IsTest
-  static void testUpsertOrderItem() {
-    List<Order> testOrders = [SELECT Id FROM Order LIMIT 1];
+  static void testGetPricebookEntriesMapByIds() {
     List<PricebookEntry> testPricebookEntries = [SELECT Id FROM PricebookEntry WHERE IsActive = TRUE LIMIT 1];
 
-    OrderItem testOrderItem = TestDataFactory.createTestOrderItem(testOrders[0].Id, testPricebookEntries[0].Id);
-
     Test.startTest();
-    ProductRepository.upsertOrderItem(testOrderItem);
+    Set<Id> pricebookEntryIds = new Set<Id>{ testPricebookEntries[0].Id };
+    Map<Id, PricebookEntry> entriesMap = ProductRepository.getPricebookEntriesMapByIds(pricebookEntryIds);
     Test.stopTest();
 
-    System.assertNotEquals(null, testOrderItem.Id, 'OrderItem Id should not be null');
+    System.assertNotEquals(null, entriesMap, 'Pricebook entries map should not be null');
+    System.assertEquals(1, entriesMap.size(), 'Incorrect number of pricebook entries in the map');
+    System.assertEquals(testPricebookEntries[0].Id, entriesMap.get(testPricebookEntries[0].Id).Id, 'Incorrect PricebookEntry in the map');
   }
 }

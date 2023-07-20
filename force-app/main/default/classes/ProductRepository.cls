@@ -9,8 +9,7 @@ public with sharing class ProductRepository {
     ];
   }
 
-  public static Map<Id, PricebookEntry> getPricebookEntriesMapByIds(Set<Id> pricebookEntryIds) {
-    Map<Id, PricebookEntry> pricebookEntriesMap = new Map<Id, PricebookEntry>([SELECT Id, UnitPrice FROM PricebookEntry WHERE Id IN :pricebookEntryIds]);
-    return pricebookEntriesMap;
+  public static PricebookEntry getPricebookEntries(Id pricebookEntryId) {
+    return [SELECT Id, UnitPrice FROM PricebookEntry WHERE Id = :pricebookEntryId];
   }
 }

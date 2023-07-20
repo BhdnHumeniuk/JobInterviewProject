@@ -32,11 +32,11 @@ public with sharing class OrderRepository {
     return [SELECT Id, Quantity FROM OrderItem WHERE Id IN :orderItemIds];
   }
 
-  public static List<OrderItem> getAllOrderItems(Set<Id> allOrderIds, Set<Id> pricebookEntryIds) {
+  public static OrderItem getAllOrderItems(Id allOrderIds, Id pricebookEntryIds) {
     return [
       SELECT Id, Quantity, OrderId, PricebookEntryId
       FROM OrderItem
-      WHERE OrderId IN :allOrderIds AND PricebookEntryId IN :pricebookEntryIds
+      WHERE OrderId = :allOrderIds AND PricebookEntryId = :pricebookEntryIds
     ];
   }
 
@@ -48,7 +48,15 @@ public with sharing class OrderRepository {
     }
   }
 
-  public static void deleteOrderItem(List<OrderItem> orderItems) {
+  public static void upsertOrderItem(OrderItem orderItems) {
+    try {
+      upsert orderItems;
+    } catch (DmlException ex) {
+      System.debug('Error occurred while upserting order items: ' + ex.getMessage());
+    }
+  }
+
+  public static void deleteOrderItems(List<OrderItem> orderItems) {
     try {
       delete orderItems;
     } catch (DmlException ex) {

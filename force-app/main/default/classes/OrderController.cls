@@ -25,7 +25,7 @@ public with sharing class OrderController {
     }
 
     if (!itemsToDelete.isEmpty()) {
-      OrderRepository.deleteOrderItem(itemsToDelete);
+      OrderRepository.deleteOrderItems(itemsToDelete);
     }
   }
 

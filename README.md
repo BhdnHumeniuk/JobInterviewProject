@@ -46,8 +46,8 @@ Custom Settings Creation:
 Setup Remote Site Settings:
 - Remote Site Name: My Project Request Catcher
 - Remote Site URL: https://myproject.requestcatcher.com
-- Description: (Optional) A brief description to identify the purpose of this remote site.
-- With the custom settings and remote site settings properly configured, the Salesforce application will have the capability to send POST requests to the specified external website, which is "https://myproject.requestcatcher.com". Any responses received from the external website will be handled as per the defined requirements, ensuring effective error handling and seamless integration with the Salesforce application.
+  
+With the custom settings and remote site settings properly configured, the Salesforce application will have the capability to send POST requests to the specified external website, which is "https://myproject.requestcatcher.com". Any responses received from the external website will be handled as per the defined requirements, ensuring effective error handling and seamless integration with the Salesforce application.
 
 ## Resources
 For development and deployment, the following resources will be utilized:

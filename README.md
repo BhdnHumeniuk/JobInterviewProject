@@ -29,7 +29,6 @@ This Salesforce DX project aims to enhance the order management process for a cu
 - The solution should be designed with modularity in mind, allowing the components to be independent and easily draggable and droppable at any place in the layout.
 - The page should not be reloaded entirely; only the changed or new items should be refreshed/added, providing a smooth user experience.
 - The "Activate" button in the "Order Products" component will handle the confirmation of the order in an external system.
-- 
 - The request format expected by the external system will follow a specific JSON structure.
 - Errors and timeouts from the external system need to be handled properly, providing a robust solution.
 - The solution should be able to handle a large number of products, exceeding 200, without compromising user experience.

@@ -1,0 +1,31 @@
+<template>
+    <lightning-card title="Available Products">
+        <div class="slds-m-around_medium">
+            <lightning-input
+                label="Search"
+                type="search"
+                value={searchKeyword}
+                onchange={handleSearch}
+            ></lightning-input>
+        </div>
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="id"
+                data={visibleProducts}
+                columns={columns}
+                onrowaction={handleRowAction}
+                onsort={handleSort}
+                sorted-direction={sortDirection}
+                sorted-by={sortedBy}
+            ></lightning-datatable>
+        </div>    
+        <div slot="footer" class="slds-var-m-vertical_medium">
+                <c-pagination
+                records={products}
+                record-size={itemsPerPage}
+                onupdate={handleUpdatePagination}
+                ></c-pagination>
+        </div>
+        <lightning-spinner if:true={isLoading} alternative-text='loading' size="large"></lightning-spinner>
+    </lightning-card>
+</template>

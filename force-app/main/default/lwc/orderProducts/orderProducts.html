@@ -1,0 +1,27 @@
+<template>
+    <lightning-card title="Order Products">
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="id"
+                data={visibleProducts}
+                columns={columns}
+                onrowaction={handleRowAction}
+                hide-checkbox-column={isOrderActivated}
+                onsort={handleSort}
+                sorted-direction={sortDirection}
+                sorted-by={sortedBy}
+            ></lightning-datatable>
+        </div>
+        <div class="slds-m-around_medium" if:false={isOrderActivated}>
+            <lightning-button label="Activate Order"  title="Activate Order" onclick={handleActivateOrder} variant="brand" disabled={isActivateButtonDisabled}></lightning-button>
+        </div>
+            <div slot="footer" class="slds-var-m-vertical_medium">
+                <c-pagination
+                records={orderProducts}
+                record-size={itemsPerPage}
+                onupdate={handleUpdatePagination}
+                ></c-pagination>
+            </div>
+        <lightning-spinner if:true={isLoading} alternative-text='loading' size="large"></lightning-spinner>
+    </lightning-card>
+</template>

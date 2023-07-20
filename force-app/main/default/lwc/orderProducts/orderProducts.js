@@ -31,7 +31,8 @@ export default class OrderProducts extends LightningElement {
 
     @wire(MessageContext)
     messageContext;
-    
+ 
+    // Method called during component initialization to fetch the order products, order status, and subscribe to the add product channel.
     connectedCallback() {
         this.fetchOrderProducts();
         this.fetchOrderStatus();
@@ -39,6 +40,7 @@ export default class OrderProducts extends LightningElement {
         this.subscribeToAddProductChannel();
     }
 
+    // Method to fetch order products based on the recordId.
     fetchOrderProducts() {
         getOrderProducts({ orderIds: this.recordId })
           .then((data) => {
@@ -60,6 +62,7 @@ export default class OrderProducts extends LightningElement {
           });
       }
 
+    // Method to fetch the order status for the current recordId.
     fetchOrderStatus() {
         getOrderStatus({ orderIds: this.recordId })
             .then((orderStatusMap) => {
@@ -72,6 +75,7 @@ export default class OrderProducts extends LightningElement {
             });
     }
 
+    // Method to update the 'disableRemove' property of order products based on the order status.
     updateButtonDisableStatus() {
         this.orderProducts = this.orderProducts.map((product) => {
             return { ...product, disableRemove: this.isOrderActive };
@@ -79,6 +83,7 @@ export default class OrderProducts extends LightningElement {
         this.isActivateButtonDisabled = this.isOrderActive;
     }
 
+    // Wire method to get order products based on the orderId.
     @wire(getOrderProducts, { orderId: '$recordId' })
     wiredOrderProducts(result) {
         this.wiredOrderProductsResult = result;
@@ -99,6 +104,7 @@ export default class OrderProducts extends LightningElement {
         }
     }
 
+    // Method to handle the 'Remove' button action on a product row.
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
@@ -107,6 +113,7 @@ export default class OrderProducts extends LightningElement {
         }
     }
 
+    // Method to remove a product from the order based on the given order item Ids.
     removeProductFromOrder(orderItemIds) {
         if (this.isOrderActive) {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
@@ -131,6 +138,7 @@ export default class OrderProducts extends LightningElement {
             });
     }
 
+    // Method to handle the 'Activate Order' button click.
     handleActivateOrder() {
         if (this.isOrderActive) {
             showErrorMessage('Error', 'Order is already activated.');
@@ -153,6 +161,7 @@ export default class OrderProducts extends LightningElement {
             .finally(() => (this.isLoading = false));
     }
 
+    // Method to handle sorting of columns in the data table.
     handleSort(event) {
         const { fieldName: sortField, sortDirection } = event.detail;
         this.sortedBy = sortField;
@@ -160,6 +169,7 @@ export default class OrderProducts extends LightningElement {
         this.sortData(sortField, this.sortDirection);
     }
 
+    // Method to sort the order products data based on the selected column and direction.
     sortData(sortField, sortDirection) {
         const data = JSON.parse(JSON.stringify(this.orderProducts));
         data.sort((a, b) => {
@@ -177,22 +187,26 @@ export default class OrderProducts extends LightningElement {
         this.updatePagination();
     }
 
+    // Method to handle the change of items per page for pagination.
     handleItemsPerPageChange(event) {
         this.itemsPerPage = event.target.value;
         this.currentPage = 1;
         this.updatePagination();
     }
 
+    // Method to update the visible order products based on the current page and items per page.
     updatePagination() {
         const start = (this.currentPage - 1) * this.itemsPerPage;
         const end = this.itemsPerPage * this.currentPage;
         this.visibleProducts = this.orderProducts.slice(start, end);
     }
 
+    // Method to handle the event dispatched from the pagination child component and update visible order products.
     handleUpdatePagination(event) {
         this.visibleProducts = event.detail.records;
     }
 
+    // Method to increase the quantity of a product in the order products list.
     increaseQuantity(productId) {
         const updatedProducts = this.orderProducts.map((product) => {
             if (product.Product2.Id === productId) {
@@ -207,6 +221,7 @@ export default class OrderProducts extends LightningElement {
         this.orderProducts = updatedProducts;
     }
 
+    // Method to decrease the quantity of a product in the order products list.
     decreaseQuantity(productId) {
         const updatedProducts = this.orderProducts.map((product) => {
             if (product.Product2.Id === productId) {
@@ -222,6 +237,7 @@ export default class OrderProducts extends LightningElement {
         this.orderProducts = updatedProducts;
     }
 
+    // Method to subscribe to the add product channel and update the quantity of the product.
     subscribeToAddProductChannel() {
         this.subscription = subscribe(
             this.messageContext,

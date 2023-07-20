@@ -2,7 +2,7 @@ import { LightningElement, wire, api } from 'lwc';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
 import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
-import addProductsToOrders from '@salesforce/apex/ProductController.addProductsToOrders';
+import addProductToOrder from '@salesforce/apex/ProductController.addProductToOrder';
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
@@ -85,14 +85,12 @@ export default class AvailableProducts extends LightningElement {
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
-    
+
         if (action.name === 'add') {
-            const orderIdsToPricebookEntryIds = { [this.recordId]: row.pricebookEntry.Id };
-            addProductsToOrders({ orderIdsToPricebookEntryIds })
+            addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
                 .then(() => {
                     showSuccessMessage('Success', 'Product added to order successfully');
                     const message = {
-                        orderId: this.recordId,
                         recordId: row.pricebookEntry.Id
                     };
                     publish(this.messageContext, ORDER_ACTIVATED_CHANNEL, message);

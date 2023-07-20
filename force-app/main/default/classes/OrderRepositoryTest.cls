@@ -20,8 +20,8 @@ public class OrderRepositoryTest {
   }
 
   @IsTest
-  static void testGetOrderProducts() {
-    List<OrderItem> orderItems = OrderRepository.getOrderProducts([SELECT Id FROM Order LIMIT 1][0].Id);
+  static void testGetOrderItemsForOrder() {
+    List<OrderItem> orderItems = OrderRepository.getOrderItemsForOrder([SELECT Id FROM Order LIMIT 1][0].Id);
 
     System.assertNotEquals(0, orderItems.size(), 'No OrderItem records found');
     for (OrderItem item : orderItems) {
@@ -32,56 +32,90 @@ public class OrderRepositoryTest {
   }
 
   @IsTest
-  static void testGetUpdatedOrder() {
-    Id orderId = [SELECT Id FROM Order LIMIT 1][0].Id;
-    Order updatedOrder = OrderRepository.getUpdatedOrder(orderId);
+  static void testGetOrderStatusMapByIds() {
+    Set<Id> orderIds = new Set<Id>();
+    orderIds.add([SELECT Id FROM Order LIMIT 1][0].Id);
 
-    System.assertNotEquals(null, updatedOrder, 'Order not found');
-    System.assertNotEquals(null, updatedOrder.Status, 'Order Status is null');
+    Map<Id, String> orderStatusMap = OrderRepository.getOrderStatusMapByIds(orderIds);
+
+    System.assertNotEquals(0, orderStatusMap.size(), 'No Order records found');
+    System.assertNotEquals(null, orderStatusMap.get(orderIds.iterator().next()), 'Order Status is null');
   }
 
   @IsTest
-  static void testGetOrderStatus() {
+  static void testGetPricebookFromOrder() {
     Id orderId = [SELECT Id FROM Order LIMIT 1][0].Id;
-    String orderStatus = OrderRepository.getOrderStatus(orderId);
+    Order order = OrderRepository.getPricebookFromOrder(orderId);
 
-    System.assertNotEquals(null, orderStatus, 'Order Status is null');
+    System.assertNotEquals(null, order, 'Order not found');
+    System.assertNotEquals(null, order.Pricebook2Id, 'Pricebook2Id is null');
   }
 
   @IsTest
-  static void testActivateOrder() {
-    Id orderId = [SELECT Id FROM Order WHERE Status = 'Draft' LIMIT 1][0].Id;
+  static void testActivateOrdersByIds() {
+    Set<Id> orderIds = new Set<Id>();
+    orderIds.add([SELECT Id FROM Order WHERE Status = 'Draft' LIMIT 1][0].Id);
 
     Test.startTest();
-    OrderRepository.activateOrder(orderId);
+    OrderRepository.activateOrdersByIds(orderIds);
     Test.stopTest();
 
-    Order updatedOrder = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
+    Order updatedOrder = [SELECT Id, Status FROM Order WHERE Id = :orderIds.iterator().next() LIMIT 1];
     System.assertEquals('Activated', updatedOrder.Status, 'Order not activated');
   }
 
   @IsTest
-  static void testUpsertOrderItem() {
-    OrderItem testOrderItem = [SELECT Id FROM OrderItem LIMIT 1];
-    testOrderItem.Quantity = 3;
+  static void testGetAllOrderItemsForOrdersById() {
+    Set<Id> orderItemIds = new Set<Id>();
+    orderItemIds.add([SELECT Id FROM OrderItem LIMIT 1][0].Id);
+
+    List<OrderItem> orderItems = OrderRepository.getAllOrderItemsForOrdersById(orderItemIds);
+
+    System.assertNotEquals(0, orderItems.size(), 'No OrderItem records found');
+    for (OrderItem item : orderItems) {
+      System.assertNotEquals(null, item.Quantity, 'Quantity is null');
+    }
+  }
+
+  @IsTest
+  static void testUpsertOrderItems() {
+    List<OrderItem> testOrderItems = [SELECT Id, Quantity FROM OrderItem LIMIT 1];
+    testOrderItems[0].Quantity = 3;
 
     Test.startTest();
-    OrderRepository.upsertOrderItem(testOrderItem);
+    OrderRepository.upsertOrderItems(testOrderItems);
     Test.stopTest();
 
-    OrderItem updatedOrderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :testOrderItem.Id LIMIT 1];
+    OrderItem updatedOrderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :testOrderItems[0].Id LIMIT 1];
+    System.assertEquals(3, updatedOrderItem.Quantity, 'OrderItem not upserted');
+  }
+
+  @IsTest
+  static void testUpsertOrderItem() {
+    List<OrderItem> testOrderItems = [SELECT Id, Quantity FROM OrderItem LIMIT 1];
+    testOrderItems[0].Quantity = 3;
+
+    Test.startTest();
+    OrderRepository.upsertOrderItem(testOrderItems.get(0));
+    Test.stopTest();
+
+    OrderItem updatedOrderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :testOrderItems[0].Id LIMIT 1];
     System.assertEquals(3, updatedOrderItem.Quantity, 'OrderItem not upserted');
   }
 
   @IsTest
   static void testDeleteOrderItem() {
-    OrderItem testOrderItem = [SELECT Id FROM OrderItem LIMIT 1];
+    List<OrderItem> testOrderItems = [SELECT Id FROM OrderItem LIMIT 1];
 
     Test.startTest();
-    OrderRepository.deleteOrderItem(testOrderItem);
+    OrderRepository.deleteOrderItems(testOrderItems);
     Test.stopTest();
 
-    List<OrderItem> deletedOrderItems = [SELECT Id FROM OrderItem WHERE Id = :testOrderItem.Id];
+    List<OrderItem> deletedOrderItems = [SELECT Id FROM OrderItem WHERE Id = :testOrderItems[0].Id];
     System.assertEquals(0, deletedOrderItems.size(), 'OrderItem not deleted');
   }
+
+  //   @IsTest
+  // static void testGetAllOrderItem() {
+  // }
 }

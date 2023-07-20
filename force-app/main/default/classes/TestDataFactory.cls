@@ -55,7 +55,12 @@ public class TestDataFactory {
   public static List<OrderItem> createTestOrderItems(List<Order> orders, List<PricebookEntry> pricebookEntries) {
     List<OrderItem> orderItems = new List<OrderItem>();
     for (Integer i = 0; i < orders.size(); i++) {
-      orderItems.add(new OrderItem(OrderId = orders[i].Id, PricebookEntryId = pricebookEntries[i].Id, Quantity = 2, UnitPrice = 100));
+      OrderItem orderItem = new OrderItem();
+      orderItem.OrderId = orders[i].Id;
+      orderItem.PricebookEntryId = pricebookEntries[i].Id;
+      orderItem.Quantity = 2;
+      orderItem.UnitPrice = 100;
+      orderItems.add(orderItem);
     }
     return orderItems;
   }

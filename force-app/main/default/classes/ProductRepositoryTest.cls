@@ -17,11 +17,19 @@ private class ProductRepositoryTest {
 
     List<OrderItem> testOrderItems = TestDataFactory.createTestOrderItems(testOrders, testPricebookEntries);
     insert testOrderItems;
+
+    Pricebook2 testPricebook = new Pricebook2(Name = 'Test Pricebook');
+    insert testPricebook;
+
+    PricebookEntry testPricebookEntry = TestDataFactory.createTestPricebookEntry(testPricebook.Id, testProducts[0].Id);
+    insert testPricebookEntry;
   }
 
   @IsTest
   static void testGetAvailablePricebookEntries() {
-    Account testAccount = [SELECT Id FROM Account LIMIT 1];
+    List<Account> testAccounts = TestDataFactory.createTestAccounts(1);
+    insert testAccounts;
+    Account testAccount = testAccounts[0];
     Order testOrder = TestDataFactory.createTestOrder(testAccount.Id, Test.getStandardPricebookId());
     insert testOrder;
 
@@ -33,44 +41,16 @@ private class ProductRepositoryTest {
     System.assertEquals(1000, entries.size(), 'Incorrect number of pricebook entries');
   }
 
-  // @IsTest
-  // static void testGetOrderItem() {
-  //   List<Order> testOrders = [SELECT Id FROM Order LIMIT 1];
-  //   List<PricebookEntry> testPricebookEntries = [SELECT Id FROM PricebookEntry WHERE IsActive = TRUE LIMIT 1];
-
-  //   Test.startTest();
-  //   OrderItem result = ProductRepository.getOrderItem(testOrders[0].Id, testPricebookEntries[0].Id);
-  //   Test.stopTest();
-
-  //   System.assertNotEquals(null, result, 'OrderItem should not be null');
-  //   System.assertEquals(testOrders[0].Id, result.OrderId, 'OrderIds should match');
-  //   System.assertEquals(testPricebookEntries[0].Id, result.PricebookEntryId, 'PricebookEntryIds should match');
-  //   System.assertEquals(2, result.Quantity, 'Quantity should match');
-  //   System.assertEquals(100, result.UnitPrice, 'UnitPrice should match');
-  // }
-
   @IsTest
-  static void testGetOrderItem_OrderItemNotFound() {
-    List<Order> testOrders = [SELECT Id FROM Order LIMIT 1];
+  static void testGetPricebookEntries() {
+    Pricebook2 testPricebook = [SELECT Id, Name FROM Pricebook2 LIMIT 1];
+    PricebookEntry testPricebookEntry = [SELECT Id, Product2.Name, UnitPrice FROM PricebookEntry WHERE Pricebook2Id = :testPricebook.Id LIMIT 1];
 
     Test.startTest();
-    OrderItem result = ProductRepository.getOrderItem(testOrders[0].Id, null);
+    PricebookEntry result = ProductRepository.getPricebookEntries(testPricebookEntry.Id);
     Test.stopTest();
 
-    System.assertEquals(null, result, 'OrderItem should be null when not found');
-  }
-
-  @IsTest
-  static void testUpsertOrderItem() {
-    List<Order> testOrders = [SELECT Id FROM Order LIMIT 1];
-    List<PricebookEntry> testPricebookEntries = [SELECT Id FROM PricebookEntry WHERE IsActive = TRUE LIMIT 1];
-
-    OrderItem testOrderItem = TestDataFactory.createTestOrderItem(testOrders[0].Id, testPricebookEntries[0].Id);
-
-    Test.startTest();
-    ProductRepository.upsertOrderItem(testOrderItem);
-    Test.stopTest();
-
-    System.assertNotEquals(null, testOrderItem.Id, 'OrderItem Id should not be null');
+    System.assertNotEquals(null, result);
+    System.assertEquals(testPricebookEntry.Id, result.Id);
   }
 }

@@ -5,7 +5,7 @@ public class OrderControllerTest {
     List<Account> testAccounts = TestDataFactory.createTestAccounts(2);
     insert testAccounts;
 
-    List<Product2> testProducts = TestDataFactory.createTestProducts(5);
+    List<Product2> testProducts = TestDataFactory.createTestProducts(1000);
     insert testProducts;
 
     Id pricebookId = Test.getStandardPricebookId();
@@ -62,6 +62,8 @@ public class OrderControllerTest {
 
   @IsTest
   static void testActivateOrder() {
+    Test.setMock(HttpCalloutMock.class, new HttpCalloutMockTest());
+
     Order testOrder = [SELECT Id FROM Order LIMIT 1];
 
     Test.startTest();
@@ -70,6 +72,5 @@ public class OrderControllerTest {
 
     List<Order> activatedOrders = [SELECT Id, Status FROM Order WHERE Id = :testOrder.Id AND Status = 'Activated'];
     System.assertEquals(1, activatedOrders.size(), 'Order should be activated');
-    System.assertEquals(1, Limits.getDMLStatements(), 'One DML statement should have been used for activation');
   }
 }

@@ -5,7 +5,7 @@ private class ProductRepositoryTest {
     Account testAccount = TestDataFactory.createTestAccount('Test Account');
     insert testAccount;
 
-    List<Product2> testProducts = TestDataFactory.createTestProducts(5);
+    List<Product2> testProducts = TestDataFactory.createTestProducts(1000);
     insert testProducts;
 
     Id pricebookId = Test.getStandardPricebookId();
@@ -17,11 +17,19 @@ private class ProductRepositoryTest {
 
     List<OrderItem> testOrderItems = TestDataFactory.createTestOrderItems(testOrders, testPricebookEntries);
     insert testOrderItems;
+
+    Pricebook2 testPricebook = new Pricebook2(Name = 'Test Pricebook');
+    insert testPricebook;
+
+    PricebookEntry testPricebookEntry = TestDataFactory.createTestPricebookEntry(testPricebook.Id, testProducts[0].Id);
+    insert testPricebookEntry;
   }
 
   @IsTest
   static void testGetAvailablePricebookEntries() {
-    Account testAccount = [SELECT Id FROM Account LIMIT 1];
+    List<Account> testAccounts = TestDataFactory.createTestAccounts(1);
+    insert testAccounts;
+    Account testAccount = testAccounts[0];
     Order testOrder = TestDataFactory.createTestOrder(testAccount.Id, Test.getStandardPricebookId());
     insert testOrder;
 
@@ -30,20 +38,19 @@ private class ProductRepositoryTest {
     Test.stopTest();
 
     System.assertNotEquals(null, entries, 'Pricebook entries should not be null');
-    System.assertEquals(5, entries.size(), 'Incorrect number of pricebook entries');
+    System.assertEquals(1000, entries.size(), 'Incorrect number of pricebook entries');
   }
 
   @IsTest
-  static void testGetPricebookEntriesMapByIds() {
-    List<PricebookEntry> testPricebookEntries = [SELECT Id FROM PricebookEntry WHERE IsActive = TRUE LIMIT 1];
+  static void testGetPricebookEntries() {
+    Pricebook2 testPricebook = [SELECT Id, Name FROM Pricebook2 LIMIT 1];
+    PricebookEntry testPricebookEntry = [SELECT Id, Product2.Name, UnitPrice FROM PricebookEntry WHERE Pricebook2Id = :testPricebook.Id LIMIT 1];
 
     Test.startTest();
-    Set<Id> pricebookEntryIds = new Set<Id>{ testPricebookEntries[0].Id };
-    Map<Id, PricebookEntry> entriesMap = ProductRepository.getPricebookEntriesMapByIds(pricebookEntryIds);
+    PricebookEntry result = ProductRepository.getPricebookEntries(testPricebookEntry.Id);
     Test.stopTest();
 
-    System.assertNotEquals(null, entriesMap, 'Pricebook entries map should not be null');
-    System.assertEquals(1, entriesMap.size(), 'Incorrect number of pricebook entries in the map');
-    System.assertEquals(testPricebookEntries[0].Id, entriesMap.get(testPricebookEntries[0].Id).Id, 'Incorrect PricebookEntry in the map');
+    System.assertNotEquals(null, result);
+    System.assertEquals(testPricebookEntry.Id, result.Id);
   }
 }

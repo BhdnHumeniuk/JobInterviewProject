@@ -32,12 +32,8 @@ public with sharing class OrderRepository {
     return [SELECT Id, Quantity FROM OrderItem WHERE Id IN :orderItemIds];
   }
 
-  public static OrderItem getAllOrderItems(Id allOrderIds, Id pricebookEntryIds) {
-    return [
-      SELECT Id, Quantity, OrderId, PricebookEntryId
-      FROM OrderItem
-      WHERE OrderId = :allOrderIds AND PricebookEntryId = :pricebookEntryIds
-    ];
+  public static List<OrderItem> getAllOrderItem(Id orderIds, Id pricebookEntryIds) {
+    return [SELECT Id, Quantity, OrderId, PricebookEntryId FROM OrderItem WHERE OrderId = :orderIds AND PricebookEntryId = :pricebookEntryIds];
   }
 
   public static void upsertOrderItems(List<OrderItem> orderItems) {

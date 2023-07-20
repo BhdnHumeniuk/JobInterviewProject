@@ -77,24 +77,6 @@ public class OrderRepositoryTest {
     }
   }
 
-  // @IsTest
-  // static void testGetAllOrderItems() {
-  //   Set<Id> allOrderIds = new Set<Id>();
-  //   allOrderIds.add([SELECT Id FROM Order LIMIT 1][0].Id);
-
-  //   Set<Id> pricebookEntryIds = new Set<Id>();
-  //   pricebookEntryIds.add([SELECT Id FROM PricebookEntry LIMIT 1][0].Id);
-
-  //   List<OrderItem> orderItems = OrderRepository.getAllOrderItems(allOrderIds, pricebookEntryIds);
-
-  //   System.assertNotEquals(0, orderItems.size(), 'No OrderItem records found');
-  //   for (OrderItem item : orderItems) {
-  //     System.assertNotEquals(null, item.Quantity, 'Quantity is null');
-  //     System.assertNotEquals(null, item.OrderId, 'OrderId is null');
-  //     System.assertNotEquals(null, item.PricebookEntryId, 'PricebookEntryId is null');
-  //   }
-  // }
-
   @IsTest
   static void testUpsertOrderItems() {
     List<OrderItem> testOrderItems = [SELECT Id, Quantity FROM OrderItem LIMIT 1];
@@ -109,14 +91,31 @@ public class OrderRepositoryTest {
   }
 
   @IsTest
+  static void testUpsertOrderItem() {
+    List<OrderItem> testOrderItems = [SELECT Id, Quantity FROM OrderItem LIMIT 1];
+    testOrderItems[0].Quantity = 3;
+
+    Test.startTest();
+    OrderRepository.upsertOrderItem(testOrderItems.get(0));
+    Test.stopTest();
+
+    OrderItem updatedOrderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :testOrderItems[0].Id LIMIT 1];
+    System.assertEquals(3, updatedOrderItem.Quantity, 'OrderItem not upserted');
+  }
+
+  @IsTest
   static void testDeleteOrderItem() {
     List<OrderItem> testOrderItems = [SELECT Id FROM OrderItem LIMIT 1];
 
     Test.startTest();
-    OrderRepository.deleteOrderItem(testOrderItems);
+    OrderRepository.deleteOrderItems(testOrderItems);
     Test.stopTest();
 
     List<OrderItem> deletedOrderItems = [SELECT Id FROM OrderItem WHERE Id = :testOrderItems[0].Id];
     System.assertEquals(0, deletedOrderItems.size(), 'OrderItem not deleted');
   }
+
+  //   @IsTest
+  // static void testGetAllOrderItem() {
+  // }
 }

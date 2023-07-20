@@ -29,15 +29,16 @@ public with sharing class ProductController {
   @AuraEnabled
   public static void addProductToOrder(Id orderId, Id pricebookEntryId) {
     PricebookEntry entry = ProductRepository.getPricebookEntries(pricebookEntryId);
-    OrderItem orderItem = OrderRepository.getAllOrderItems(orderId, pricebookEntryId);
+    List<OrderItem> orderItems = OrderRepository.getAllOrderItem(orderId, pricebookEntryId);
 
-    if (orderItem != null) {
-      orderItem.Quantity += 1;
-    } else {
-      orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
+    for (OrderItem OrderItem : OrderItems) {
+      if (orderItem != null) {
+        orderItem.Quantity += 1;
+      } else {
+        orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
+      }
     }
-
-    OrderRepository.upsertOrderItem(orderItem);
+    OrderRepository.upsertOrderItems(orderItems);
   }
 
   private static Boolean isProductAlreadyAdded(List<AvailableProductWrapper> products, Id productId) {

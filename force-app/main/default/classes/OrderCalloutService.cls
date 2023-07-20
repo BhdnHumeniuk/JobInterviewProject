@@ -1,4 +1,9 @@
+/**
+ * OrderCalloutService class provides methods to perform callouts and send order information to an external system.
+ * It includes a method for sending order information to an external system using HTTP callouts.
+ */
 public with sharing class OrderCalloutService {
+  // Sends order information to an external system based on the given Order Id.
   @future(callout=true)
   public static void sendOrderInformation(Id orderId) {
     Order order = [SELECT Id, AccountId, OrderNumber, Type, Status FROM Order WHERE Id = :orderId LIMIT 1];

@@ -1,4 +1,9 @@
+/**
+ * ProductController class provides Aura-enabled methods to interact with the ProductRepository class and perform actions on Products.
+ * It includes methods to get available products, add products to an order, and check if a product is already added to the order.
+ */
 public with sharing class ProductController {
+  // Returns a list of available products for a given Order Id and search keyword by calling the corresponding method in ProductRepository.
   @AuraEnabled(cacheable=true)
   public static List<AvailableProductWrapper> getAvailableProducts(Id orderId, String searchKeyword) {
     List<AvailableProductWrapper> products = new List<AvailableProductWrapper>();
@@ -26,6 +31,7 @@ public with sharing class ProductController {
     return products;
   }
 
+  // Adds a product to an order based on the given Order Id and PricebookEntry Id by calling the corresponding method in ProductRepository.
   @AuraEnabled
   public static void addProductToOrder(Id orderId, Id pricebookEntryId) {
     PricebookEntry entry = ProductRepository.getPricebookEntries(pricebookEntryId);
@@ -41,6 +47,7 @@ public with sharing class ProductController {
     OrderRepository.upsertOrderItems(orderItems);
   }
 
+  // Checks if a product with a given Product Id is already added to the order by calling a private method.
   private static Boolean isProductAlreadyAdded(List<AvailableProductWrapper> products, Id productId) {
     for (AvailableProductWrapper product : products) {
       if (product.pricebookEntry.Product2Id == productId) {
@@ -50,6 +57,7 @@ public with sharing class ProductController {
     return false;
   }
 
+  // Wrapper class to hold available products and their addition status to the order.
   public class AvailableProductWrapper {
     @AuraEnabled
     public PricebookEntry pricebookEntry { get; set; }

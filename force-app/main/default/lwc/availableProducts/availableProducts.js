@@ -32,12 +32,14 @@ export default class AvailableProducts extends LightningElement {
     @wire(MessageContext)
     messageContext;
 
+    // Method called during component initialization to fetch the order status and update button disable status.
     connectedCallback() {
         this.fetchOrderStatus();
         this.subscribeToOrderActivatedMessage();
         this.updatePagination();
     }
 
+    // Method to fetch the order status for the current recordId.
     fetchOrderStatus() {
         getOrderStatus({ orderIds: this.recordId })
             .then((orderStatusMap) => {
@@ -50,6 +52,7 @@ export default class AvailableProducts extends LightningElement {
             });
     }
 
+    // Method to update the 'isAdded' property of products to enable/disable the 'Add' button based on the order status.
     updateButtonDisableStatus() {
         this.products = this.products.map((product) => ({
             ...product,
@@ -57,6 +60,7 @@ export default class AvailableProducts extends LightningElement {
         }));
     }
 
+    // Wire method to get available products based on orderId and searchKeyword.
     @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
     wiredProducts(result) {
         const { data, error } = result;
@@ -77,11 +81,13 @@ export default class AvailableProducts extends LightningElement {
         return { [this.recordId]: this.searchKeyword };
     }
 
+    // Method to handle the search input and update the searchKeyword for filtering products.
     handleSearch(event) {
         this.searchKeyword = event.target.value;
         this.updatePagination();
     }
 
+    // Method to handle the 'Add' button action on a product row.
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
@@ -102,6 +108,7 @@ export default class AvailableProducts extends LightningElement {
         }
     }
 
+    // Method to handle sorting of columns in the data table.
     handleSort(event) {
         const { fieldName: sortField, sortDirection } = event.detail;
         this.sortedBy = sortField;
@@ -110,6 +117,7 @@ export default class AvailableProducts extends LightningElement {
         this.updatePagination();
     }
 
+    // Method to sort the products data based on the selected column and direction.
     sortData(sortField, sortDirection) {
         const data = [...this.products];
         data.sort((a, b) => {
@@ -129,22 +137,26 @@ export default class AvailableProducts extends LightningElement {
         this.products = data;
     }
 
+    // Method to handle the change of items per page for pagination.
     handleItemsPerPageChange(event) {
         this.itemsPerPage = event.target.value;
         this.currentPage = 1;
         this.updatePagination();
     }
 
+    // Method to update the visible products based on the current page and items per page.
     updatePagination() {
         const start = (this.currentPage - 1) * this.itemsPerPage;
         const end = this.itemsPerPage * this.currentPage;
         this.visibleProducts = this.products.slice(start, end);
     }
 
+    // Method to handle the event dispatched from the pagination child component and update visible products.
     handleUpdatePagination(event) {
         this.visibleProducts = event.detail.records;
     }
 
+    // Method to subscribe to the order activated message channel and fetch the updated order status when notified.
     subscribeToOrderActivatedMessage() {
         this.subscription = subscribe(
             this.messageContext,

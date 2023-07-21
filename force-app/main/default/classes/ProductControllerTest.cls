@@ -26,7 +26,21 @@ private class ProductControllerTest {
     System.assertEquals(200, products.size(), 'Incorrect number of available products');
   }
 
-  // @IsTest
-  // static void testAddProductToOrder() {
-  // }
+  @IsTest
+  static void testAddProductToOrder() {
+    Account testAccount = [SELECT Id FROM Account LIMIT 1];
+    Order testOrder = TestDataFactory.createTestOrder(testAccount.Id, Test.getStandardPricebookId());
+    insert testOrder;
+
+    List<PricebookEntry> pricebookEntries = [SELECT Id, Product2Id, UnitPrice FROM PricebookEntry LIMIT 1];
+    OrderItem existingOrderItem = new OrderItem(OrderId = testOrder.Id, PricebookEntryId = pricebookEntries[0].Id, Quantity = 2, UnitPrice = pricebookEntries[0].UnitPrice);
+    insert existingOrderItem;
+
+    Test.startTest();
+    ProductController.addProductToOrder(testOrder.Id, pricebookEntries[0].Id);
+    Test.stopTest();
+
+    OrderItem updatedOrderItem = [SELECT Id, Quantity FROM OrderItem WHERE Id = :existingOrderItem.Id];
+    System.assertEquals(3, updatedOrderItem.Quantity, 'Incorrect quantity after adding the product to the order');
+  }
 }

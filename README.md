@@ -1,22 +1,22 @@
 # Project Description - Order Management Salesforce DX Project
 
 ## Overview
-This Salesforce DX project aims to enhance the order management process for a customer by allowing them to add products to an order without leaving the order detail page. The project involves creating two Lightning Web Components (LWC) that will be placed on the order record page. The first component, "Available Products," will display orderable products suitable for the order based on the order's price book. The second component, "Order Products," will display products that have been added to the current order.
+This Salesforce DX project aims to enhance the order management process for a customer by allowing them to add products to order without leaving the order detail page. The project involves creating two Lightning Web Components (LWC) that will be placed on the order record page. The first component, "Available Products," will display orderable products suitable for the order based on the order's price book. The second component, "Order Products," will display products that have been added to the current order.
 
 ## Components and Functionality
 ### Available Products Component
 - The "Available Products" component will be displayed as a 2-column list showing the Name and List Price of orderable products.
 - Products that are already added to the order will appear at the top of the list.
 - Each product can only appear once in the list, ensuring no duplicates.
-- Optional: The list can be sorted by column, providing a more organized view.
-- Optional: Users can search for products by their names, enabling easier product discovery.
+- The list can be sorted by column, providing a more organized view.
+- Users can search for products by their names, enabling easier product discovery.
 - Users will have the ability to add a product from the list to the order.
   - If the selected product is not yet added to the order, it will be added with a quantity of 1.
   - If the product already exists in the order, the quantity of the existing order product will be increased by 1.
 
 ### Order Products Component
 - The "Order Products" component will display the order products in a table format, showing the Name, Unit Price, Quantity, and Total Price of each order item.
-- Optional: The list can be sorted by column to provide better user flexibility.
+- The list can be sorted by column to provide better user flexibility.
 - The "Order Products" component will have an "Activate" button that sets the status of the order and order items to "Activated."
 - Once activated, the end-user will not be able to add new order items or confirm the order for a second time.
 - Short video of my solution: https://drive.google.com/file/d/1E1wkVaXJeHbnZe5mc9LMd_hmTZAs3N70/view?usp=sharing

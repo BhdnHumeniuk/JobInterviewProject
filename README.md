@@ -19,6 +19,7 @@ This Salesforce DX project aims to enhance the order management process for a cu
 - Optional: The list can be sorted by column to provide better user flexibility.
 - The "Order Products" component will have an "Activate" button that sets the status of the order and order items to "Activated."
 - Once activated, the end-user will not be able to add new order items or confirm the order for a second time.
+- Short video of my solution: https://drive.google.com/file/d/1E1wkVaXJeHbnZe5mc9LMd_hmTZAs3N70/view?usp=sharing
 
 ### Deployment and Technical Requirements
 - The project will be managed using Salesforce DX (SFDX).

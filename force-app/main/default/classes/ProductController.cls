@@ -37,13 +37,19 @@ public with sharing class ProductController {
     PricebookEntry entry = ProductRepository.getPricebookEntries(pricebookEntryId);
     List<OrderItem> orderItems = OrderRepository.getAllOrderItem(orderId, pricebookEntryId);
 
-    for (OrderItem OrderItem : OrderItems) {
+    Boolean productFound = false;
+    for (OrderItem orderItem : orderItems) {
       if (orderItem != null) {
         orderItem.Quantity += 1;
-      } else {
-        orderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
+        productFound = true;
       }
     }
+
+    if (!productFound) {
+      OrderItem newOrderItem = new OrderItem(OrderId = orderId, PricebookEntryId = pricebookEntryId, Quantity = 1, UnitPrice = entry.UnitPrice);
+      orderItems.add(newOrderItem);
+    }
+
     OrderRepository.upsertOrderItems(orderItems);
   }
 

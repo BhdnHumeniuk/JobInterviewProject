@@ -19,12 +19,18 @@
                 sorted-by={sortedBy}
             ></lightning-datatable>
         </div>    
-        <div slot="footer" class="slds-var-m-vertical_medium">
+        <div slot="footer">
+            <div class="slds-m-around_medium">
                 <c-pagination
-                records={products}
-                record-size={itemsPerPage}
-                onupdate={handleUpdatePagination}
+                    records={products}
+                    record-size={itemsPerPage}
+                    onupdate={handleUpdatePagination}
                 ></c-pagination>
+                <c-pagination-helper 
+                    record-size={itemsPerPage}
+                    onrecordsizechange={handleRecordSizeChange}
+                ></c-pagination-helper>
+            </div>
         </div>
         <lightning-spinner if:true={isLoading} alternative-text='loading' size="large"></lightning-spinner>
     </lightning-card>

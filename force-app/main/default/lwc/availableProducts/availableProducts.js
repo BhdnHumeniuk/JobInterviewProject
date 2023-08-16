@@ -1,5 +1,8 @@
 import { LightningElement, wire, api } from 'lwc';
 import { publish, subscribe, MessageContext } from 'lightning/messageService';
+import { refreshApex } from '@salesforce/apex';
+import { RefreshEvent } from 'lightning/refresh';
+
 import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getAvailableProducts from '@salesforce/apex/ProductController.getAvailableProducts';
 import addProductToOrder from '@salesforce/apex/ProductController.addProductToOrder';
@@ -36,7 +39,6 @@ export default class AvailableProducts extends LightningElement {
     connectedCallback() {
         this.fetchOrderStatus();
         this.subscribeToOrderActivatedMessage();
-        this.updatePagination();
     }
 
     // Method to fetch the order status for the current recordId.
@@ -63,6 +65,7 @@ export default class AvailableProducts extends LightningElement {
     // Wire method to get available products based on orderId and searchKeyword.
     @wire(getAvailableProducts, { orderId: '$recordId', searchKeyword: '$searchKeyword' })
     wiredProducts(result) {
+        this.wiredProductsResult = result;
         const { data, error } = result;
         if (data) {
             this.products = data.map(product => ({
@@ -75,10 +78,6 @@ export default class AvailableProducts extends LightningElement {
         } else if (error) {
             console.error('Error fetching available products:', error);
         }
-    }
-
-    get orderIdsToSearchKeywords() {
-        return { [this.recordId]: this.searchKeyword };
     }
 
     // Method to handle the search input and update the searchKeyword for filtering products.
@@ -95,11 +94,10 @@ export default class AvailableProducts extends LightningElement {
         if (action.name === 'add') {
             addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
                 .then(() => {
+                    refreshApex(this.wiredOrderProductsResult); 
+                    this.dispatchEvent(new RefreshEvent());
+                    publish(this.messageContext, ORDER_ACTIVATED_CHANNEL, {type: 'ProductAddToOrder', payload: true});
                     showSuccessMessage('Success', 'Product added to order successfully');
-                    const message = {
-                        recordId: row.pricebookEntry.Id
-                    };
-                    publish(this.messageContext, ORDER_ACTIVATED_CHANNEL, message);
                 })
                 .catch((error) => {
                     console.error('Error adding product to order:', error);
@@ -149,6 +147,13 @@ export default class AvailableProducts extends LightningElement {
         const start = (this.currentPage - 1) * this.itemsPerPage;
         const end = this.itemsPerPage * this.currentPage;
         this.visibleProducts = this.products.slice(start, end);
+    }
+
+    handleRecordSizeChange(event) {
+        const newRecordSize = event.detail.recordSize;
+        this.itemsPerPage = parseInt(newRecordSize, 10);
+        this.currentPage = 1;
+        this.updatePagination();
     }
 
     // Method to handle the event dispatched from the pagination child component and update visible products.

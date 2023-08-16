@@ -49,7 +49,7 @@ export default class OrderProducts extends LightningElement {
                 this.updateButtonDisableStatus();
             })
             .catch((error) => {
-                console.error('Error fetching order status:', error);
+                console.error('Error fetching order status:', error.message);
             });
     }
 
@@ -78,7 +78,7 @@ export default class OrderProducts extends LightningElement {
             });
             this.updatePagination();
         } else if (result.error) {
-            console.error('Error fetching order products:', result.error);
+            console.error('Error fetching order products:', result.error.message);
         }
     }
 
@@ -97,6 +97,7 @@ export default class OrderProducts extends LightningElement {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
+        this.isLoading = true;
         deleteProductFromOrder({ orderItemIds })
             .then(() => {
                 refreshApex(this.wiredOrderProductsResult); 
@@ -104,9 +105,10 @@ export default class OrderProducts extends LightningElement {
                 showSuccessMessage('Success', 'Product removed from order successfully');
             })
             .catch((error) => {
-                console.error('Error removing product from order:', error);
+                console.error('Error removing product from order:', error.message);
                 showErrorMessage('Error', 'Failed to remove product from order');
-            });
+            })
+            .finally(() => (this.isLoading = false));
     }
 
     // Method to handle the 'Activate Order' button click.

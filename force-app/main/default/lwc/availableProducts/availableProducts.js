@@ -50,7 +50,7 @@ export default class AvailableProducts extends LightningElement {
                 this.updateButtonDisableStatus();
             })
             .catch((error) => {
-                console.error('Error fetching order status:', error);
+                console.error('Error fetching order status:', error.message);
             });
     }
 
@@ -76,7 +76,7 @@ export default class AvailableProducts extends LightningElement {
             }));
             this.updatePagination();
         } else if (error) {
-            console.error('Error fetching available products:', error);
+            console.error('Error fetching available products:', error.message);
         }
     }
 
@@ -90,8 +90,8 @@ export default class AvailableProducts extends LightningElement {
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
-
         if (action.name === 'add') {
+            this.isLoading = true;
             addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
                 .then(() => {
                     refreshApex(this.wiredOrderProductsResult); 
@@ -100,9 +100,10 @@ export default class AvailableProducts extends LightningElement {
                     showSuccessMessage('Success', 'Product added to order successfully');
                 })
                 .catch((error) => {
-                    console.error('Error adding product to order:', error);
+                    console.error('Error adding product to order:', error.message);
                     showErrorMessage('Error', 'Failed to add product to order');
-                });
+                })
+                .finally(() => (this.isLoading = false));
         }
     }
 

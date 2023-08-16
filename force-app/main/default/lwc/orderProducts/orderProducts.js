@@ -40,28 +40,6 @@ export default class OrderProducts extends LightningElement {
         this.subscribeToAddProductChannel();
     }
 
-    // Method to fetch order products based on the recordId.
-    fetchOrderProducts() {
-        getOrderProducts({ orderIds: this.recordId })
-          .then((data) => {
-            const mergedOrderProducts = Object.values(data).flatMap(orderItems => orderItems);
-            this.orderProducts = mergedOrderProducts.map((product) => {
-                return {
-                    ...product,
-                    productName: product.Product2.Name,
-                    unitPrice: product.UnitPrice,
-                    quantityValue: product.Quantity,
-                    totalPrice: product.UnitPrice * product.Quantity,
-                    disableRemove: this.isOrderActive
-                };
-            });
-            this.updatePagination();
-          })
-          .catch((error) => {
-            console.error('Error fetching order products:', error);
-          });
-      }
-
     // Method to fetch the order status for the current recordId.
     fetchOrderStatus() {
         getOrderStatus({ orderIds: this.recordId })
@@ -194,6 +172,7 @@ export default class OrderProducts extends LightningElement {
         this.visibleProducts = this.orderProducts.slice(start, end);
     }
 
+    //Method to update itemsPerPage.
     handleRecordSizeChange(event) {
         const newRecordSize = event.detail.recordSize;
         this.itemsPerPage = parseInt(newRecordSize, 10);

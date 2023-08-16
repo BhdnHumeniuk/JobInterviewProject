@@ -16,13 +16,5 @@
             onclick={nextHandler}
             disabled={disableNext}></lightning-button>
         </lightning-layout-item>
-        <lightning-layout-item  class="slds-var-p-horizontal_small">
-            <lightning-combobox
-                label="Items per Page"
-                value={recordSize}
-                options={recordSizeOptions}
-                onchange={handleItemsPerPageChange}
-            ></lightning-combobox>
-        </lightning-layout-item>
     </lightning-layout>
 </template>

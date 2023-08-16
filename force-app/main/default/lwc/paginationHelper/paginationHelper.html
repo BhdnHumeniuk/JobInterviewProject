@@ -1,0 +1,12 @@
+<template>
+    <lightning-layout>
+        <lightning-layout-item>
+            <lightning-combobox
+                label="Items per Page"
+                value={recordSize}
+                options={recordSizeOptions}
+                onchange={handleRecordSizeChange}
+            ></lightning-combobox>
+        </lightning-layout-item>
+    </lightning-layout>
+</template>

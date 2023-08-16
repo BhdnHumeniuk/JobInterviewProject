@@ -10,7 +10,7 @@ import deleteProductFromOrder from '@salesforce/apex/OrderController.deleteProdu
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 
 const columns = [
-    { label: 'Name', fieldName: 'productName', type: 'text', sortable: true },
+    { label: 'Name', fieldName: 'productId', type: 'url', typeAttributes: { label: { fieldName: 'productName' }, target: '_blank', tooltip: 'View Product' }, sortable: true },    
     { label: 'Unit Price', fieldName: 'unitPrice', type: 'currency', sortable: true },
     { label: 'Quantity', fieldName: 'quantityValue', type: 'number', sortable: true },
     { label: 'Total Price', fieldName: 'totalPrice', type: 'currency', sortable: true },
@@ -70,6 +70,7 @@ export default class OrderProducts extends LightningElement {
                 return {
                     ...product,
                     productName: product.Product2.Name,
+                    productId: `/lightning/r/Product/${product.Id}/view`,
                     unitPrice: product.UnitPrice,
                     quantityValue: product.Quantity,
                     totalPrice: product.UnitPrice * product.Quantity,

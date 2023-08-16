@@ -11,7 +11,7 @@ import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 
 const columns = [
-    { label: 'Name', fieldName: 'productName', type: 'text', sortable: true },
+    { label: 'Name', fieldName: 'productId', type: 'url', typeAttributes: { label: { fieldName: 'productName' }, target: '_blank', tooltip: 'View Product' }, sortable: true },    
     { label: 'List Price', fieldName: 'listPrice', type: 'currency', sortable: true },
     { label: 'Action', type: 'button', typeAttributes: { label: 'Add', name: 'add', disabled: { fieldName: 'isAdded' } } }
 ];
@@ -71,6 +71,7 @@ export default class AvailableProducts extends LightningElement {
             this.products = data.map(product => ({
                 ...product,
                 productName: product.pricebookEntry.Product2.Name,
+                productId: `/lightning/r/Product/${product.Id}/view`,
                 listPrice: product.pricebookEntry.UnitPrice,
                 isAdded: this.isOrderActive
             }));

@@ -1,12 +1,13 @@
 import { LightningElement, wire, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
+import { RefreshEvent } from 'lightning/refresh';
+import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 import { subscribe, publish, MessageContext } from 'lightning/messageService';
 import ORDER_ACTIVATED_CHANNEL from '@salesforce/messageChannel/LightningMessageService__c';
 import getOrderProducts from '@salesforce/apex/OrderController.getOrderProducts';
 import activateOrder from '@salesforce/apex/OrderController.activateOrder';
 import deleteProductFromOrder from '@salesforce/apex/OrderController.deleteProductFromOrder';
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
-import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 
 const columns = [
     { label: 'Name', fieldName: 'productName', type: 'text', sortable: true },
@@ -34,9 +35,8 @@ export default class OrderProducts extends LightningElement {
  
     // Method called during component initialization to fetch the order products, order status, and subscribe to the add product channel.
     connectedCallback() {
-        this.fetchOrderProducts();
+        refreshApex(this.wiredOrderProductsResult);
         this.fetchOrderStatus();
-        this.updatePagination();
         this.subscribeToAddProductChannel();
     }
 
@@ -119,21 +119,14 @@ export default class OrderProducts extends LightningElement {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
-    
-        this.decreaseQuantity(orderItemIds[0]);
-    
-        const originalProducts = JSON.parse(JSON.stringify(this.orderProducts));
-    
         deleteProductFromOrder({ orderItemIds })
             .then(() => {
-                return refreshApex(this.wiredOrderProductsResult);
-            })
-            .then(() => {
+                refreshApex(this.wiredOrderProductsResult); 
+                this.dispatchEvent(new RefreshEvent());
                 showSuccessMessage('Success', 'Product removed from order successfully');
             })
             .catch((error) => {
                 console.error('Error removing product from order:', error);
-                this.orderProducts = originalProducts;
                 showErrorMessage('Error', 'Failed to remove product from order');
             });
     }
@@ -201,40 +194,16 @@ export default class OrderProducts extends LightningElement {
         this.visibleProducts = this.orderProducts.slice(start, end);
     }
 
+    handleRecordSizeChange(event) {
+        const newRecordSize = event.detail.recordSize;
+        this.itemsPerPage = parseInt(newRecordSize, 10);
+        this.currentPage = 1;
+        this.updatePagination();
+    }
+
     // Method to handle the event dispatched from the pagination child component and update visible order products.
     handleUpdatePagination(event) {
         this.visibleProducts = event.detail.records;
-    }
-
-    // Method to increase the quantity of a product in the order products list.
-    increaseQuantity(productId) {
-        const updatedProducts = this.orderProducts.map((product) => {
-            if (product.Product2.Id === productId) {
-                return {
-                    ...product,
-                    Quantity: product.Quantity + 1,
-                    totalPrice: (product.Quantity + 1) * product.unitPrice
-                };
-            }
-            return product;
-        });
-        this.orderProducts = updatedProducts;
-    }
-
-    // Method to decrease the quantity of a product in the order products list.
-    decreaseQuantity(productId) {
-        const updatedProducts = this.orderProducts.map((product) => {
-            if (product.Product2.Id === productId) {
-                const newQuantity = product.Quantity - 1;
-                return {
-                    ...product,
-                    Quantity: newQuantity,
-                    totalPrice: newQuantity * product.unitPrice
-                };
-            }
-            return product;
-        });
-        this.orderProducts = updatedProducts;
     }
 
     // Method to subscribe to the add product channel and update the quantity of the product.
@@ -243,9 +212,9 @@ export default class OrderProducts extends LightningElement {
             this.messageContext,
             ORDER_ACTIVATED_CHANNEL,
             (message) => {
-                const productId = message.recordId;
-                this.increaseQuantity(productId);
+                if (message.type === 'ProductAddToOrder') {
                 refreshApex(this.wiredOrderProductsResult); 
+                }
             }
         );
     }

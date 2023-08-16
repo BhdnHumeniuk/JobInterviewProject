@@ -11,7 +11,7 @@ import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 import { showSuccessMessage, showErrorMessage } from "c/showMessageHelper";
 
 const columns = [
-    { label: 'Name', fieldName: 'productName', type: 'text', sortable: true },
+    { label: 'Name', fieldName: 'productId', type: 'url', typeAttributes: { label: { fieldName: 'productName' }, target: '_blank', tooltip: 'View Product' }, sortable: true },    
     { label: 'List Price', fieldName: 'listPrice', type: 'currency', sortable: true },
     { label: 'Action', type: 'button', typeAttributes: { label: 'Add', name: 'add', disabled: { fieldName: 'isAdded' } } }
 ];
@@ -50,7 +50,7 @@ export default class AvailableProducts extends LightningElement {
                 this.updateButtonDisableStatus();
             })
             .catch((error) => {
-                console.error('Error fetching order status:', error);
+                console.error('Error fetching order status:', error.message);
             });
     }
 
@@ -71,12 +71,13 @@ export default class AvailableProducts extends LightningElement {
             this.products = data.map(product => ({
                 ...product,
                 productName: product.pricebookEntry.Product2.Name,
+                productId: `/lightning/r/Product/${product.Id}/view`,
                 listPrice: product.pricebookEntry.UnitPrice,
                 isAdded: this.isOrderActive
             }));
             this.updatePagination();
         } else if (error) {
-            console.error('Error fetching available products:', error);
+            console.error('Error fetching available products:', error.message);
         }
     }
 
@@ -90,8 +91,8 @@ export default class AvailableProducts extends LightningElement {
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
-
         if (action.name === 'add') {
+            this.isLoading = true;
             addProductToOrder({ orderId: this.recordId, pricebookEntryId: row.pricebookEntry.Id })
                 .then(() => {
                     refreshApex(this.wiredOrderProductsResult); 
@@ -100,9 +101,10 @@ export default class AvailableProducts extends LightningElement {
                     showSuccessMessage('Success', 'Product added to order successfully');
                 })
                 .catch((error) => {
-                    console.error('Error adding product to order:', error);
+                    console.error('Error adding product to order:', error.message);
                     showErrorMessage('Error', 'Failed to add product to order');
-                });
+                })
+                .finally(() => (this.isLoading = false));
         }
     }
 

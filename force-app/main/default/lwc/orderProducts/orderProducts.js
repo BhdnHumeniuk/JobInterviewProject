@@ -10,7 +10,7 @@ import deleteProductFromOrder from '@salesforce/apex/OrderController.deleteProdu
 import getOrderStatus from '@salesforce/apex/OrderController.getOrderStatus';
 
 const columns = [
-    { label: 'Name', fieldName: 'productName', type: 'text', sortable: true },
+    { label: 'Name', fieldName: 'productId', type: 'url', typeAttributes: { label: { fieldName: 'productName' }, target: '_blank', tooltip: 'View Product' }, sortable: true },    
     { label: 'Unit Price', fieldName: 'unitPrice', type: 'currency', sortable: true },
     { label: 'Quantity', fieldName: 'quantityValue', type: 'number', sortable: true },
     { label: 'Total Price', fieldName: 'totalPrice', type: 'currency', sortable: true },
@@ -49,7 +49,7 @@ export default class OrderProducts extends LightningElement {
                 this.updateButtonDisableStatus();
             })
             .catch((error) => {
-                console.error('Error fetching order status:', error);
+                console.error('Error fetching order status:', error.message);
             });
     }
 
@@ -70,6 +70,7 @@ export default class OrderProducts extends LightningElement {
                 return {
                     ...product,
                     productName: product.Product2.Name,
+                    productId: `/lightning/r/Product/${product.Id}/view`,
                     unitPrice: product.UnitPrice,
                     quantityValue: product.Quantity,
                     totalPrice: product.UnitPrice * product.Quantity,
@@ -78,7 +79,7 @@ export default class OrderProducts extends LightningElement {
             });
             this.updatePagination();
         } else if (result.error) {
-            console.error('Error fetching order products:', result.error);
+            console.error('Error fetching order products:', result.error.message);
         }
     }
 
@@ -97,6 +98,7 @@ export default class OrderProducts extends LightningElement {
             showErrorMessage('Error', 'Order is already activated. Cannot remove products.');
             return;
         }
+        this.isLoading = true;
         deleteProductFromOrder({ orderItemIds })
             .then(() => {
                 refreshApex(this.wiredOrderProductsResult); 
@@ -104,9 +106,10 @@ export default class OrderProducts extends LightningElement {
                 showSuccessMessage('Success', 'Product removed from order successfully');
             })
             .catch((error) => {
-                console.error('Error removing product from order:', error);
+                console.error('Error removing product from order:', error.message);
                 showErrorMessage('Error', 'Failed to remove product from order');
-            });
+            })
+            .finally(() => (this.isLoading = false));
     }
 
     // Method to handle the 'Activate Order' button click.

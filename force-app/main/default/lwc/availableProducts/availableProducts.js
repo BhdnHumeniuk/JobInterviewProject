@@ -71,7 +71,7 @@ export default class AvailableProducts extends LightningElement {
             this.products = data.map(product => ({
                 ...product,
                 productName: product.pricebookEntry.Product2.Name,
-                productId: `/lightning/r/Product/${product.Id}/view`,
+                productId: '/' + product.pricebookEntry.Product2.Id,
                 listPrice: product.pricebookEntry.UnitPrice,
                 isAdded: this.isOrderActive
             }));

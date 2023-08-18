@@ -70,7 +70,7 @@ export default class OrderProducts extends LightningElement {
                 return {
                     ...product,
                     productName: product.Product2.Name,
-                    productId: `/lightning/r/Product/${product.Id}/view`,
+                    productId: '/' + product.Product2.Id,
                     unitPrice: product.UnitPrice,
                     quantityValue: product.Quantity,
                     totalPrice: product.UnitPrice * product.Quantity,
